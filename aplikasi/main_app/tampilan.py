@@ -119,6 +119,26 @@ def kartu(label, angka_utama, keterangan, warna=WARNA_UTAMA):
     )
 
 
+def penjelasan(isi, judul="Cara membaca grafik ini", buka=False):
+    """Kotak penjelasan yang bisa dibuka-tutup, untuk pembaca yang belum terbiasa dengan istilah statistik."""
+    with st.expander(judul, icon=":material/lightbulb:", expanded=buka):
+        st.markdown(isi)
+
+
+def arti_hasil(selisih, ambang, subjek="daerah ini"):
+    """Kalimat sederhana yang menjelaskan arti selisih dan status untuk pembaca awam."""
+    status = tentukan_status(selisih, ambang)
+    if status == STATUS_ATAS:
+        return (f"IPM aktual **{angka(selisih)} poin lebih tinggi** daripada perkiraan model. Artinya, capaian "
+                f"pembangunan manusia {subjek} **lebih baik** daripada daerah lain yang kondisi sosial-ekonominya mirip.")
+    if status == STATUS_BAWAH:
+        return (f"IPM aktual **{angka(-selisih)} poin lebih rendah** daripada perkiraan model. Artinya, capaian "
+                f"pembangunan manusia {subjek} **tertinggal** dari daerah lain yang kondisi sosial-ekonominya mirip, "
+                f"sehingga perlu perhatian lebih.")
+    return (f"IPM aktual dan IPM prediksi hanya berbeda **{angka(abs(selisih))} poin**, masih di dalam batas "
+            f"±{angka(ambang)}. Artinya, capaian {subjek} **setara** dengan daerah lain yang kondisinya mirip.")
+
+
 def kartu_status(status, jumlah, total):
     persen = jumlah / total * 100 if total else 0
     kartu(status, angka(jumlah, 0), f"{angka(persen, 1)}% dari {angka(total, 0)} baris", WARNA_STATUS[status])

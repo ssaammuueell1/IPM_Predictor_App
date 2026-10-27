@@ -1,9 +1,8 @@
 import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
 
-from utils import muat_info, muat_model, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS, STATUS_BAWAH
-from tampilan import hero, kartu, badge_status, grafik_selisih, tentukan_status, rapikan, WARNA_UTAMA, WARNA_REDUP
+from utils import muat_info, muat_model, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS
+from tampilan import hero, kartu, badge_status, grafik_selisih, tentukan_status, penjelasan, arti_hasil
 
 info = muat_info()
 model = muat_model("tuning")
@@ -31,19 +30,18 @@ def isi_contoh():
     st.session_state[KUNCI["IPM"]] = round(float(terakhir["IPM"].median()), 2)
 
 
-def kosongkan():
-    for kunci in KUNCI.values():
-        st.session_state[kunci] = None
-
-
 # ---------- Form masukan ----------
-b1, b2, _ = st.columns([1, 1, 3])
-b1.button("Isi contoh", icon=":material/auto_fix_high:", on_click=isi_contoh, width="stretch",
+penjelasan(
+    "1. Isi kelima indikator sebuah daerah, atau tekan **Isi contoh** untuk mencoba dengan nilai tengah data.\n"
+    "2. Jika IPM aktual daerah tersebut diketahui, isi juga kotak **IPM aktual** supaya statusnya bisa dihitung.\n"
+    "3. Tekan **Hitung IPM prediksi**.\n\n"
+    "Arahkan kursor ke ikon (?) di setiap kotak untuk melihat rentang nilai yang ada di data penelitian.",
+    judul="Cara memakai halaman ini",
+)
+st.button("Isi contoh", icon=":material/auto_fix_high:", on_click=isi_contoh,
           help="Nilai tengah (median) data tahun terakhir.")
-b2.button("Kosongkan", icon=":material/restart_alt:", on_click=kosongkan, width="stretch")
 
 with st.form("form_data_baru", border=True):
-    st.markdown("**Indikator sosial-ekonomi**")
     kiri, kanan = st.columns(2)
     nilai = {}
     for i, k in enumerate(kolom):
@@ -61,10 +59,10 @@ with st.form("form_data_baru", border=True):
                                     help="Isi untuk melihat selisih dan status.")
     kirim = st.form_submit_button("Hitung IPM prediksi", type="primary", icon=":material/calculate:")
 
+
 # ---------- Hasil ----------
 def tampilkan_hasil():
     if not kirim:
-        st.info("Isi nilai indikator lalu tekan **Hitung IPM prediksi**.", icon=":material/arrow_upward:")
         return
 
     kosong = [LABEL_PREDIKTOR[k] for k in kolom if nilai[k] is None]
@@ -72,14 +70,18 @@ def tampilkan_hasil():
         st.error("Isi semua indikator terlebih dahulu: " + ", ".join(kosong) + ".", icon=":material/error:")
         return
 
-    data_baru = pd.DataFrame([nilai], columns=kolom)
-    ipm_prediksi = float(model.predict(data_baru)[0])
+    ipm_prediksi = float(model.predict(pd.DataFrame([nilai], columns=kolom))[0])
 
     st.subheader("Hasil")
     if ipm_aktual is None:
-        kiri, kanan = st.columns([1, 2])
+        kiri, _ = st.columns([1, 2])
         with kiri:
             kartu("IPM prediksi", angka(ipm_prediksi), "Isi IPM aktual untuk melihat statusnya.")
+        st.markdown(
+            f":material/summarize: **Artinya:** daerah dengan kondisi seperti yang dimasukkan diperkirakan memiliki "
+            f"IPM sekitar **{angka(ipm_prediksi)}**, dengan kemungkinan meleset ±{angka(ambang)} poin "
+            f"(antara {angka(ipm_prediksi - ambang)} dan {angka(ipm_prediksi + ambang)})."
+        )
     else:
         selisih = ipm_aktual - ipm_prediksi
         status = tentukan_status(selisih, ambang)
@@ -91,44 +93,24 @@ def tampilkan_hasil():
         with k3:
             kartu("Selisih", ("+" if selisih > 0 else "") + angka(selisih), status, WARNA_STATUS[status])
         badge_status(status)
+        st.markdown(":material/summarize: **Artinya:** " + arti_hasil(selisih, ambang, subjek="daerah tersebut"))
         st.plotly_chart(grafik_selisih(selisih, ambang), width="stretch", config={"displayModeBar": False})
+        penjelasan(
+            "- Pita ini adalah penggaris selisih (IPM aktual − IPM prediksi). Angka **0** di tengah berarti "
+            "IPM aktual sama persis dengan prediksi.\n"
+            f"- **Area abu-abu di tengah** (−{angka(ambang)} sampai +{angka(ambang)}) = **sesuai prediksi**. "
+            "Selisih sekecil ini masih wajar karena model rata-rata meleset sebesar itu.\n"
+            "- **Area teal di kanan** = **di atas prediksi** (IPM aktual lebih tinggi dari perkiraan).\n"
+            "- **Area merah di kiri** = **di bawah prediksi** (IPM aktual lebih rendah dari perkiraan).\n"
+            "- **Tanda belah ketupat** menunjukkan posisi selisih daerah Anda. Makin jauh dari tengah, "
+            "makin besar perbedaannya."
+        )
 
-    # ---------- Cek rentang ----------
-    st.subheader("Apakah nilai masih dalam rentang data?")
-    cek = pd.DataFrame({
-        "Indikator": [LABEL_PREDIKTOR[k] for k in kolom],
-        "Nilai input": [nilai[k] for k in kolom],
-        "Minimum data": [rentang[k]["min"] for k in kolom],
-        "Maksimum data": [rentang[k]["max"] for k in kolom],
-    })
-    cek["Keterangan"] = ["Dalam rentang" if mn <= v <= mx else "Di luar rentang"
-                         for v, mn, mx in zip(cek["Nilai input"], cek["Minimum data"], cek["Maksimum data"])]
-
-    jumlah_luar = int((cek["Keterangan"] == "Di luar rentang").sum())
-    if jumlah_luar > 0:
-        st.warning(f"{jumlah_luar} nilai di luar rentang data, jadi hasilnya kurang dapat diandalkan.",
-                   icon=":material/warning:")
-    else:
-        st.success("Semua nilai dalam rentang data.", icon=":material/check_circle:")
-
-    # Posisi setiap nilai pada skala 0 (minimum data) sampai 1 (maksimum data)
-    posisi = ((cek["Nilai input"] - cek["Minimum data"]) / (cek["Maksimum data"] - cek["Minimum data"])).clip(-0.08, 1.08)
-    fig = go.Figure()
-    fig.add_trace(go.Bar(x=[1] * len(cek), y=cek["Indikator"], orientation="h", marker_color=WARNA_REDUP,
-                         width=0.25, hoverinfo="skip", showlegend=False))
-    fig.add_trace(go.Scatter(
-        x=posisi, y=cek["Indikator"], mode="markers",
-        marker=dict(size=16, symbol="diamond", line=dict(color="white", width=2),
-                    color=[WARNA_UTAMA if k == "Dalam rentang" else WARNA_STATUS[STATUS_BAWAH] for k in cek["Keterangan"]]),
-        customdata=cek[["Nilai input", "Minimum data", "Maksimum data"]],
-        hovertemplate="%{y}<br>Masukan %{customdata[0]:,.2f}<br>Rentang %{customdata[1]:,.2f} – %{customdata[2]:,.2f}<extra></extra>",
-        showlegend=False,
-    ))
-    fig.update_xaxes(range=[-0.1, 1.1], tickvals=[0, 1], ticktext=["Minimum data", "Maksimum data"], showgrid=False)
-    fig.update_yaxes(autorange="reversed", title=None)
-    st.plotly_chart(rapikan(fig, tinggi=280, legenda=False), width="stretch", config={"displayModeBar": False})
-
-    st.dataframe(cek.style.format(precision=2, decimal=",", thousands="."), hide_index=True, width="stretch")
+    # Model tidak bisa memperkirakan di luar rentang data penelitian
+    di_luar = [LABEL_PREDIKTOR[k] for k in kolom if not rentang[k]["min"] <= nilai[k] <= rentang[k]["max"]]
+    if di_luar:
+        st.warning("Di luar rentang data penelitian, jadi hasilnya kurang dapat diandalkan: "
+                   + ", ".join(di_luar) + ".", icon=":material/warning:")
 
 
 tampilkan_hasil()

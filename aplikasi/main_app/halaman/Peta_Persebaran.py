@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from utils import muat_tabel, muat_info, muat_peta, angka
-from tampilan import hero, transparan
+from tampilan import hero, transparan, penjelasan
 
 tabel = muat_tabel()
 info = muat_info()
@@ -111,6 +111,16 @@ with st.container(border=True):
     st.plotly_chart(fig, width="stretch", config={"scrollZoom": True, "displayModeBar": False})
 st.caption(f"{atur['arti']} Abu-abu muda = di luar cakupan penelitian. Arahkan kursor ke daerah untuk rinciannya. "
            f"Batas wilayah: geoBoundaries (CC BY 4.0).")
+penjelasan(
+    "- **IPM aktual**: makin gelap warnanya, makin tinggi IPM daerah itu.\n"
+    "- **Penduduk miskin (%)**: makin merah, makin banyak penduduk miskin.\n"
+    "- **Selisih IPM**: membandingkan IPM aktual dengan IPM yang diperkirakan model. "
+    "**Teal** = IPM lebih tinggi dari perkiraan (berprestasi), **merah** = lebih rendah dari perkiraan "
+    f"(tertinggal), **abu-abu** = kurang lebih sesuai perkiraan (selisih di dalam ±{angka(ambang)}).\n"
+    "- Gunakan pilihan **Wilayah** untuk memperbesar satu provinsi, dan geser **Tahun** untuk melihat perubahan. "
+    "Peta juga bisa diperbesar dengan menggulir mouse.",
+    judul="Cara membaca peta",
+)
 
 # ---------- Lima tertinggi dan terendah ----------
 kolom_tampil = ["Kabupaten/Kota", "Provinsi", atur["kolom"]]

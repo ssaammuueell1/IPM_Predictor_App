@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from utils import muat_tabel, muat_info, angka, WARNA_STATUS, LABEL_PREDIKTOR
-from tampilan import hero, badge_status, grafik_selisih, rapikan, WARNA_UTAMA, WARNA_SEKUNDER
+from tampilan import hero, badge_status, rapikan, penjelasan, arti_hasil, WARNA_UTAMA, WARNA_SEKUNDER
 
 tabel = muat_tabel()
 info = muat_info()
@@ -29,7 +29,6 @@ with st.container(border=True):
 
 baris = data_daerah[data_daerah["Tahun"] == tahun].iloc[0]
 data_tahun = tabel[tabel["Tahun"] == tahun]
-peringkat = int(data_tahun["IPM"].rank(ascending=False, method="min")[baris.name])
 
 # ---------- Hasil ----------
 judul, status_kolom = st.columns([3, 1], vertical_alignment="center")
@@ -37,22 +36,19 @@ judul.subheader(f"{daerah}, {provinsi} · {tahun}")
 with status_kolom:
     badge_status(baris["Status"])
 
-k1, k2, k3, k4 = st.columns(4)
+k1, k2, k3 = st.columns(3)
 k1.metric("IPM aktual", angka(baris["IPM"]), border=True)
 k2.metric("IPM prediksi", angka(baris["IPM_prediksi"]), border=True)
 k3.metric("Selisih", ("+" if baris["Selisih"] > 0 else "") + angka(baris["Selisih"]), border=True,
-          help="Selisih = IPM aktual − IPM prediksi")
-k4.metric("Peringkat IPM aktual", f"{peringkat} / {len(data_tahun)}", border=True,
-          help="1 = IPM tertinggi pada tahun itu.")
+          help=f"IPM aktual − IPM prediksi. Di luar ±{angka(ambang)} berarti di atas/di bawah prediksi.")
+with st.container(border=True):
+    st.markdown(":material/summarize: **Artinya:** " + arti_hasil(baris["Selisih"], ambang))
 
-st.plotly_chart(grafik_selisih(float(baris["Selisih"]), ambang), width="stretch",
-                config={"displayModeBar": False})
-st.caption(f"Diprediksi oleh model yang tidak pernah melihat data daerah ini (fold {baris['Fold']}).")
-
-tab_tren, tab_indikator = st.tabs([":material/show_chart: Tren IPM", ":material/tune: Nilai indikator"])
+kiri, kanan = st.columns([3, 2], gap="large")
 
 # ---------- Grafik tren ----------
-with tab_tren:
+with kiri:
+    st.subheader("Tren IPM")
     tahun_x = data_daerah["Tahun"]
     prediksi = data_daerah["IPM_prediksi"]
 
@@ -73,30 +69,46 @@ with tab_tren:
     fig.add_vline(x=tahun, line_dash="dot", line_color="gray")
     fig.update_layout(hovermode="x unified", yaxis_title="IPM")
     fig.update_xaxes(dtick=1)
-    st.plotly_chart(rapikan(fig, tinggi=400), width="stretch")
-    st.caption(f"Warna titik = status tiap tahun. Area abu-abu = batas ±{angka(ambang)}.")
+    st.plotly_chart(rapikan(fig, tinggi=380), width="stretch")
+    penjelasan(
+        "- **Garis teal tebal** = IPM aktual (data BPS) dari tahun ke tahun.\n"
+        "- **Garis abu-abu putus-putus** = IPM yang diperkirakan model.\n"
+        f"- **Area abu-abu** = batas toleransi ±{angka(ambang)} poin di sekitar prediksi. Selama titik IPM aktual "
+        "berada di dalam area ini, daerah dianggap **sesuai prediksi**.\n"
+        "- **Warna titik** menunjukkan status tiap tahun: teal = di atas prediksi, abu-abu = sesuai, "
+        "merah = di bawah prediksi.\n"
+        "- **Garis titik-titik tegak** menandai tahun yang sedang dipilih.\n"
+        "- Jika garis teal terus berada di atas area abu-abu, daerah ini konsisten berprestasi lebih baik "
+        "dari perkiraan; jika terus di bawah, daerah ini konsisten tertinggal."
+    )
 
-# ---------- Posisi prediktor ----------
-with tab_indikator:
+# ---------- Posisi indikator ----------
+with kanan:
+    st.subheader(f"Indikator vs rata-rata ({tahun})")
     kolom = list(LABEL_PREDIKTOR)
-    rata = data_tahun[kolom].mean()
-    posisi = pd.DataFrame({
-        "Indikator": list(LABEL_PREDIKTOR.values()),
-        "Nilai daerah": [baris[k] for k in kolom],
-        f"Rata-rata {jumlah_daerah} daerah ({tahun})": rata.values,
-    })
-    posisi["Beda dari rata-rata (%)"] = (posisi["Nilai daerah"] / posisi.iloc[:, 2] - 1) * 100
-
+    beda = pd.Series([(baris[k] / data_tahun[k].mean() - 1) * 100 for k in kolom], index=LABEL_PREDIKTOR.values())
     fig2 = go.Figure(go.Bar(
-        x=posisi["Beda dari rata-rata (%)"], y=posisi["Indikator"], orientation="h",
-        marker_color=[WARNA_UTAMA if v >= 0 else WARNA_SEKUNDER for v in posisi["Beda dari rata-rata (%)"]],
-        text=[("+" if v > 0 else "") + angka(v, 1) + "%" for v in posisi["Beda dari rata-rata (%)"]],
-        textposition="outside", hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
+        x=beda.values, y=beda.index, orientation="h",
+        marker_color=[WARNA_UTAMA if v >= 0 else WARNA_SEKUNDER for v in beda.values],
+        text=[("+" if v > 0 else "") + angka(v, 0) + "%" for v in beda.values],
+        textposition="outside", cliponaxis=False, hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
     ))
     fig2.add_vline(x=0, line_color="#9CA3AF")
-    fig2.update_xaxes(title=f"Beda dari rata-rata {jumlah_daerah} daerah tahun {tahun} (%)", ticksuffix="%")
+    # Ruang tambahan di kiri-kanan supaya label angka di ujung batang tidak terpotong
+    ruang = max(abs(beda.min()), abs(beda.max()), 10) * 0.45
+    fig2.update_xaxes(title=f"Beda dari rata-rata {jumlah_daerah} daerah (%)", ticksuffix="%",
+                      range=[min(beda.min(), 0) - ruang, max(beda.max(), 0) + ruang])
     fig2.update_yaxes(autorange="reversed", title=None)
-    st.plotly_chart(rapikan(fig2, tinggi=300, legenda=False), width="stretch")
-
-    st.dataframe(posisi.style.format(precision=2, decimal=",", thousands="."), hide_index=True, width="stretch")
-    st.caption("Hanya menunjukkan posisi daerah, bukan penyebab selisih IPM.")
+    st.plotly_chart(rapikan(fig2, tinggi=380, legenda=False), width="stretch")
+    tertinggi, terendah = beda.idxmax(), beda.idxmin()
+    penjelasan(
+        f"- Setiap batang membandingkan indikator {daerah} dengan **rata-rata {jumlah_daerah} daerah** "
+        f"pada tahun {tahun}.\n"
+        "- **0%** = sama dengan rata-rata. **+20%** = 20% lebih tinggi dari rata-rata, **−20%** = 20% lebih rendah.\n"
+        "- Teal = di atas rata-rata, abu-abu = di bawah rata-rata.\n"
+        "- Hati-hati: **lebih tinggi tidak selalu lebih baik**. Untuk penduduk miskin dan pengangguran, "
+        "nilai di atas rata-rata justru kurang baik.\n"
+        f"- Pada {tahun}, indikator yang paling jauh di atas rata-rata adalah **{tertinggi}**, dan yang paling "
+        f"jauh di bawah rata-rata adalah **{terendah}**.\n"
+        "- Grafik ini hanya menggambarkan **posisi** daerah, bukan penyebab selisih IPM."
+    )
