@@ -34,7 +34,7 @@ penjelasan(
     f"dan kesehatan. Nilai 1 berarti sempurna, nilai 0 berarti tidak lebih baik dari menebak rata-rata.\n\n"
     f"**MAE = ±{mae}**: rata-rata, perkiraan model meleset sekitar {mae} poin. Contohnya, jika IPM aktual "
     f"sebuah daerah 65, perkiraan model biasanya berada di antara {angka(65 - silang['MAE'])} dan "
-    f"{angka(65 + silang['MAE'])}. Karena itu, selisih yang masih di dalam ±{mae} dianggap **sesuai prediksi**.\n\n"
+    f"{angka(65 + silang['MAE'])}. Selisih yang masih di dalam ±{mae} dianggap **sesuai prediksi**.\n\n"
     f"**Validasi silang 5 fold**: mirip ujian dengan soal yang belum pernah dilihat. Daerah dibagi menjadi "
     f"5 kelompok. Model belajar dari 4 kelompok, lalu menebak IPM kelompok ke-5. Ini diulang 5 kali, "
     f"sehingga setiap daerah pernah ditebak oleh model yang belum pernah melihatnya.",
