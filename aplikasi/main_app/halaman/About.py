@@ -30,7 +30,7 @@ with kanan:
 st.subheader("Cara memakai aplikasi")
 st.markdown("Ikuti langkah berikut jika baru pertama kali membuka aplikasi ini.")
 LANGKAH = [
-    ("halaman/Peta_Persebaran.py", "Beranda", ":material/home:",
+    ("halaman/Landing_Page.py", "Beranda", ":material/home:",
      "Lihat peta. Pilih **Selisih IPM** untuk melihat daerah yang IPM-nya di atas (teal) atau di bawah (merah) "
      "perkiraan. Arahkan kursor ke daerah untuk melihat angkanya."),
     ("halaman/Daftar_wilayah.py", "Daftar Wilayah", ":material/table_view:",

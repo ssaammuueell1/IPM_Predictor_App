@@ -19,7 +19,7 @@ hero("Prediksi IPM di Wilayah dengan",
      aksen="Kemiskinan Tinggi di Indonesia", gambar_nama="header_beranda", besar=True,
      chip=[f"{jumlah['daerah']} kabupaten/kota", f"{tabel['Provinsi'].nunique()} provinsi",
            f"{jumlah['tahun_awal']}–{jumlah['tahun_akhir']}",
-           f"R² {angka(info['metrik_prediksi_silang']['tuning']['R2'], 2)}"])
+           ])
 
 # ---------- Pilihan ----------
 PILIHAN = {
