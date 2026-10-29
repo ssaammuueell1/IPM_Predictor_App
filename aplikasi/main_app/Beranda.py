@@ -3,7 +3,7 @@ import streamlit as st
 from utils import muat_info, angka
 from tampilan import pasang_gaya
 
-st.set_page_config(page_title="Prediksi IPM Wilayah Kemiskinan Tinggi", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Prediksi IPM Wilayah Kemiskinan Tinggi", page_icon="", layout="wide")
 pasang_gaya()
 
 # ---------- Navigasi antarhalaman (menu di bagian atas) ----------

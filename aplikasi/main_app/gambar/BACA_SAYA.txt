@@ -1,8 +1,0 @@
-Simpan gambar di folder ini dengan nama berikut (format .jpg, .png, atau .webp).
-Selama gambar belum ada, aplikasi menampilkan kotak "Tempat gambar" dengan nama file yang dicari.
-
-Nama file                       Halaman                   Saran ukuran
-header_beranda                  Beranda (peta)            1200 x 800 px
-
-Contoh: gambar\header_beranda.jpg
-Setelah menambah gambar, muat ulang halaman di browser.

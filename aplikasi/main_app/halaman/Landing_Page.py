@@ -16,9 +16,9 @@ SEMUA = "Seluruh Indonesia"
 hero("Prediksi IPM di Wilayah dengan",
      "Membandingkan IPM aktual tiap kabupaten/kota dengan IPM yang diperkirakan model XGBoost "
      "dari kondisi sosial-ekonominya.",
-     aksen="Kemiskinan Tinggi di Indonesia", gambar_nama="header_beranda", besar=True,
+     aksen="Kemiskinan Tinggi di Indonesia", besar=True,
      chip=[f"{jumlah['daerah']} kabupaten/kota", f"{tabel['Provinsi'].nunique()} provinsi",
-           f"{jumlah['tahun_awal']}–{jumlah['tahun_akhir']}",
+           f"{jumlah['tahun_awal']}-{jumlah['tahun_akhir']}",
            ])
 
 # ---------- Pilihan ----------
