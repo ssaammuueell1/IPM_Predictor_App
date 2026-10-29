@@ -15,7 +15,7 @@ KUNCI = {k: f"masukan_{k}" for k in kolom + ["IPM"]}
 
 hero("Prediksi Data Baru",
      "Masukkan lima indikator, dapatkan perkiraan IPM. Data yang dimasukkan tidak disimpan.",
-     label="Coba sendiri", gambar_nama="header_prediksi_baru")
+     label="Coba sendiri")
 
 # Isi awal kotak masukan (kosong)
 for kunci in KUNCI.values():
@@ -96,9 +96,9 @@ def tampilkan_hasil():
         st.markdown(":material/summarize: **Artinya:** " + arti_hasil(selisih, ambang, subjek="daerah tersebut"))
         st.plotly_chart(grafik_selisih(selisih, ambang), width="stretch", config={"displayModeBar": False})
         penjelasan(
-            "- Pita ini adalah penggaris selisih (IPM aktual − IPM prediksi). Angka **0** di tengah berarti "
+            "- Pita ini adalah penggaris selisih (IPM aktual - IPM prediksi). Angka **0** di tengah berarti "
             "IPM aktual sama persis dengan prediksi.\n"
-            f"- **Area abu-abu di tengah** (−{angka(ambang)} sampai +{angka(ambang)}) = **sesuai prediksi**. "
+            f"- **Area abu-abu di tengah** (-{angka(ambang)} sampai +{angka(ambang)}) = **sesuai prediksi**. "
             "Selisih sekecil ini masih wajar karena model rata-rata meleset sebesar itu.\n"
             "- **Area teal di kanan** = **di atas prediksi** (IPM aktual lebih tinggi dari perkiraan).\n"
             "- **Area merah di kiri** = **di bawah prediksi** (IPM aktual lebih rendah dari perkiraan).\n"

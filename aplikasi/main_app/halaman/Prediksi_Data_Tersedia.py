@@ -12,7 +12,7 @@ jumlah_daerah = info["jumlah"]["daerah"]
 
 hero("Prediksi Data Tersedia",
      "Lihat IPM satu daerah: aktual, prediksi, dan selisihnya dari tahun ke tahun.",
-     label="Per daerah", gambar_nama="header_prediksi_tersedia")
+     label="Per daerah")
 
 # ---------- Pilihan daerah dan tahun ----------
 with st.container(border=True):
@@ -78,7 +78,7 @@ with kiri:
         "- **Warna titik** menunjukkan status tiap tahun: teal = di atas prediksi, abu-abu = sesuai, "
         "merah = di bawah prediksi.\n"
         "- **Garis titik-titik tegak** menandai tahun yang sedang dipilih.\n"
-        "- Jika garis teal terus berada di atas area abu-abu, daerah ini konsisten berprestasi lebih baik "
+        "- Jika garis teal terus berada di atas area abu-abu, daerah ini konsisten naik (lebih baik) "
         "dari perkiraan; jika terus di bawah, daerah ini konsisten tertinggal."
     )
 

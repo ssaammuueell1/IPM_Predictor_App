@@ -16,29 +16,27 @@ mae = angka(silang["MAE"], 2)
 
 hero("Evaluasi Model",
      "Seberapa akurat model memperkirakan IPM?",
-     label="Kinerja model", gambar_nama="header_evaluasi")
+     label="Kinerja model")
 
 # ---------- Angka utama ----------
-k1, k2 = st.columns(2)
-k1.metric("R²", angka(r2, 2), border=True,
-          help="Seberapa banyak variasi IPM yang dijelaskan model (0–1). Makin besar makin baik.")
-k2.metric("Rata-rata kesalahan (MAE)", f"±{mae} poin IPM", border=True,
+uji_tuning = uji["Dengan tuning"]
+k1, k2, k3, k4 = st.columns(4)
+k1.metric("R² data uji", angka(uji_tuning["R2"], 2), border=True,
+          help="Diukur pada 20% kabupaten/kota yang tidak dipakai saat melatih model.")
+k2.metric("MAE data uji", f"±{angka(uji_tuning['MAE'], 2)} poin", border=True)
+k3.metric("R² validasi silang", angka(r2, 2), border=True,
+          help=f"Seluruh {jumlah_daerah} daerah diuji bergiliran dengan model yang tidak pernah melihatnya (5 fold).")
+k4.metric("MAE validasi silang", f"±{mae} poin", border=True,
           help="Dipakai sebagai batas status di seluruh aplikasi.")
-st.caption(f"Diukur pada {jumlah_daerah} daerah, masing-masing diprediksi oleh model yang tidak pernah "
-           f"melihat daerah tersebut (validasi silang 5 fold).")
+st.caption(f"Data uji: 23 kabupaten/kota yang disisihkan sejak awal. Validasi silang: pengujian yang lebih ketat "
+           f"pada seluruh {jumlah_daerah} daerah.")
 
 penjelasan(
-    f"**R² = {angka(r2, 2)}**: IPM tiap daerah berbeda-beda. Model dapat menjelaskan sekitar "
-    f"**{angka(r2 * 100, 0)}%** dari perbedaan itu hanya dari lima indikator. Sisanya, sekitar "
-    f"{angka((1 - r2) * 100, 0)}%, dipengaruhi hal lain yang tidak ada di data, misalnya fasilitas sekolah "
-    f"dan kesehatan. Nilai 1 berarti sempurna, nilai 0 berarti tidak lebih baik dari menebak rata-rata.\n\n"
-    f"**MAE = ±{mae}**: rata-rata, perkiraan model meleset sekitar {mae} poin. Contohnya, jika IPM aktual "
-    f"sebuah daerah 65, perkiraan model biasanya berada di antara {angka(65 - silang['MAE'])} dan "
-    f"{angka(65 + silang['MAE'])}. Selisih yang masih di dalam ±{mae} dianggap **sesuai prediksi**.\n\n"
-    f"**Validasi silang 5 fold**: mirip ujian dengan soal yang belum pernah dilihat. Daerah dibagi menjadi "
-    f"5 kelompok. Model belajar dari 4 kelompok, lalu menebak IPM kelompok ke-5. Ini diulang 5 kali, "
-    f"sehingga setiap daerah pernah ditebak oleh model yang belum pernah melihatnya.",
-    judul="Apa arti angka-angka ini?",
+    f"**R² data uji = {angka(uji_tuning['R2'], 2)}**: pada daerah yang tidak dipakai saat melatih, model dapat "
+    f"menjelaskan sekitar **{angka(uji_tuning['R2'] * 100, 0)}%** perbedaan IPM antardaerah hanya dari lima indikator. "
+    f"Pada validasi silang yang menguji seluruh {jumlah_daerah} daerah, angkanya {angka(r2, 2)}, karena daerah yang "
+    f"sulit ditebak (misalnya di Papua) ikut diuji. Nilai 1 berarti sempurna, nilai 0 berarti tidak lebih baik "
+    f"dari menebak rata-rata.\n\n"
 )
 
 # ---------- Aktual vs prediksi | Kontribusi indikator ----------
@@ -55,7 +53,7 @@ with kiri:
     st.plotly_chart(rapikan(fig, tinggi=440), width="stretch")
     penjelasan(
         "- Setiap **titik** adalah satu kabupaten/kota pada satu tahun.\n"
-        "- **Sumbu mendatar** = IPM aktual (data BPS), **sumbu tegak** = IPM prediksi model.\n"
+        "- **Nomor/Sumbu Horizontal** = IPM aktual (data BPS), **Nomor/Sumbu Vertikal** = IPM prediksi model.\n"
         "- Titik **tepat di garis putus-putus** berarti tebakan model sama persis dengan kenyataan.\n"
         "- Titik **di bawah garis** (hijau-teal): IPM aktual lebih tinggi dari tebakan model, "
         "jadi daerah itu **di atas prediksi**.\n"
@@ -89,17 +87,8 @@ tabel_uji.index.name = "Model"
 st.dataframe(tabel_uji.reset_index().style.format(precision=2, decimal=","), hide_index=True, width="stretch")
 st.caption("Diukur pada data uji, yaitu 20% kabupaten/kota yang tidak dipakai saat melatih model.")
 penjelasan(
-    f"- **Tebak rata-rata (baseline)**: cara paling sederhana, yaitu menebak semua daerah dengan IPM rata-rata. "
-    f"Kesalahannya sekitar ±{angka(uji['Baseline']['MAE'])} poin. Model baru berguna jika jauh lebih baik dari ini.\n"
-    f"- **Tanpa tuning**: XGBoost dengan pengaturan bawaan.\n"
-    f"- **Dengan tuning**: XGBoost yang pengaturannya dipilih dengan mencoba banyak kombinasi. Model inilah "
-    f"yang dipakai di aplikasi.\n"
-    f"- Cara membandingkan: **MAE makin kecil makin baik**, **R² makin besar makin baik**. "
-    f"Kesalahan model dengan tuning (±{angka(uji['Dengan tuning']['MAE'])}) kira-kira "
-    f"{angka(uji['Baseline']['MAE'] / uji['Dengan tuning']['MAE'], 1)} kali lebih kecil daripada baseline.\n"
-    f"- **Mengapa R² di sini ({angka(uji['Dengan tuning']['R2'])}) berbeda dengan angka di atas "
-    f"({angka(r2)})?** Tabel ini hanya memakai satu kelompok data uji. Angka di atas menguji seluruh "
-    f"{jumlah_daerah} daerah lewat validasi silang, jadi lebih ketat dan lebih jujur. Aplikasi memakai angka "
-    f"di atas.",
+    f"- **Mengapa R² validasi silang ({angka(r2)}) lebih kecil?** Tabel ini hanya memakai 23 daerah uji. "
+    f"Validasi silang menguji seluruh {jumlah_daerah} daerah, termasuk yang paling sulit ditebak, jadi lebih ketat. "
+    f"Batas status ±{mae} diambil dari validasi silang supaya status setiap daerah tidak terlalu longgar.",
     judul="Cara membaca tabel ini",
 )

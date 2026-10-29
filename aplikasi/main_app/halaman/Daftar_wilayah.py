@@ -8,7 +8,7 @@ info = muat_info()
 
 hero("Daftar Wilayah",
      "Cari dan saring IPM aktual dan IPM prediksi setiap kabupaten/kota.",
-     label="Data", gambar_nama="header_daftar_wilayah")
+     label="Data")
 
 # ---------- Filter ----------
 with st.container(border=True):

@@ -2,7 +2,7 @@ import plotly.express as px
 import streamlit as st
 
 from utils import muat_info, muat_tabel, angka, URUTAN_STATUS, WARNA_STATUS, STATUS_ATAS, STATUS_SESUAI, STATUS_BAWAH
-from tampilan import hero, gambar, kartu, rapikan, penjelasan
+from tampilan import hero, kartu, rapikan, penjelasan
 
 info = muat_info()
 tabel = muat_tabel()
@@ -11,20 +11,16 @@ ambang = angka(info["ambang_status"])
 
 hero("Tentang aplikasi",
      "Cara kerja aplikasi, cara membaca hasil, dan batasannya.",
-     label="Tentang", gambar_nama="header_tentang")
+     label="Tentang")
 
 # ---------- Apa yang dilakukan aplikasi ini ----------
-kiri, kanan = st.columns([3, 2], gap="large", vertical_alignment="center")
-with kiri:
-    st.subheader("Apa yang dilakukan aplikasi ini?")
-    st.markdown(
-        "Model **XGBoost** memperkirakan IPM setiap kabupaten/kota dari lima indikator: persentase penduduk miskin, "
-        "Tingkat Partisipasi Angkatan Kerja, Tingkat Pengangguran Terbuka, Produk Domestik Regional Bruto (PDRB) per kapita, dan kepadatan penduduk.\n\n"
-        "Perkiraan ini disebut **IPM prediksi**. Dengan membandingkannya dengan IPM aktual, kita bisa melihat "
-        "daerah mana yang capaiannya lebih tinggi atau lebih rendah daripada daerah lain dengan kondisi serupa."
-    )
-with kanan:
-    gambar("tentang_ilustrasi", tinggi=230, saran="900 × 600 px")
+st.subheader("Apa yang dilakukan aplikasi ini?")
+st.markdown(
+    "Model **XGBoost** memperkirakan IPM setiap kabupaten/kota dari lima indikator: persentase penduduk miskin, "
+    "Tingkat Partisipasi Angkatan Kerja, Tingkat Pengangguran Terbuka, Produk Domestik Regional Bruto (PDRB) per kapita, dan kepadatan penduduk.\n\n"
+    "Perkiraan ini disebut **IPM prediksi**. Dengan membandingkannya dengan IPM aktual, kita bisa melihat "
+    "daerah mana yang capaiannya lebih tinggi atau lebih rendah daripada daerah lain dengan kondisi serupa."
+)
 
 # ---------- Tutorial ----------
 st.subheader("Cara memakai aplikasi")
@@ -89,9 +85,10 @@ jumlah_status = tabel["Status"].value_counts()
 for kolom, status in zip(st.columns(3), URUTAN_STATUS):
     with kolom:
         kartu(status, f"{angka(jumlah_status.get(status, 0), 0)} baris", arti[status], WARNA_STATUS[status])
+    st.write("")
 penjelasan(
     "Misalkan sebuah kabupaten punya **IPM aktual 66,00**, sedangkan model memperkirakan **IPM prediksi 62,00**.\n\n"
-    "1. Selisih = 66,00 − 62,00 = **+4,00**.\n"
+    "1. Selisih = 66,00 - 62,00 = **+4,00**.\n"
     f"2. +4,00 lebih besar dari +{ambang}, jadi statusnya **Di atas prediksi**.\n"
     "3. Artinya, kabupaten ini mencapai IPM lebih tinggi daripada daerah lain dengan kondisi kemiskinan, "
     "lapangan kerja, dan ekonomi yang mirip.\n\n"
@@ -100,20 +97,20 @@ penjelasan(
     judul="Contoh perhitungan",
 )
 
-# ---------- Komposisi status per tahun ----------
-st.subheader("Status per tahun")
-komposisi = tabel.groupby(["Tahun", "Status"]).size().reset_index(name="Jumlah daerah")
-fig = px.bar(komposisi, x="Tahun", y="Jumlah daerah", color="Status", color_discrete_map=WARNA_STATUS,
-             category_orders={"Status": URUTAN_STATUS}, text="Jumlah daerah")
-fig.update_traces(textposition="inside", textfont_color="white")
-fig.update_xaxes(dtick=1, title=None)
-st.plotly_chart(rapikan(fig, tinggi=340), width="stretch")
-penjelasan(
-    f"Setiap batang adalah satu tahun dan tingginya menunjukkan jumlah daerah ({jumlah['daerah']}). "
-    "Warna dalam batang menunjukkan berapa daerah yang berstatus di atas (teal), sesuai (abu-abu), "
-    "atau di bawah prediksi (merah) pada tahun itu. Bagian merah yang mengecil dari tahun ke tahun "
-    "berarti makin sedikit daerah yang tertinggal."
-)
+# # ---------- Komposisi status per tahun ----------
+# st.subheader("Status per tahun")
+# komposisi = tabel.groupby(["Tahun", "Status"]).size().reset_index(name="Jumlah daerah")
+# fig = px.bar(komposisi, x="Tahun", y="Jumlah daerah", color="Status", color_discrete_map=WARNA_STATUS,
+#              category_orders={"Status": URUTAN_STATUS}, text="Jumlah daerah")
+# fig.update_traces(textposition="inside", textfont_color="white")
+# fig.update_xaxes(dtick=1, title=None)
+# st.plotly_chart(rapikan(fig, tinggi=340), width="stretch")
+# penjelasan(
+#     f"Setiap batang adalah satu tahun dan tingginya menunjukkan jumlah daerah ({jumlah['daerah']}). "
+#     "Warna dalam batang menunjukkan berapa daerah yang berstatus di atas (teal), sesuai (abu-abu), "
+#     "atau di bawah prediksi (merah) pada tahun itu. Bagian merah yang mengecil dari tahun ke tahun "
+#     "berarti makin sedikit daerah yang tertinggal."
+# )
 
 # ---------- Batasan ----------
 st.subheader("Batasan")

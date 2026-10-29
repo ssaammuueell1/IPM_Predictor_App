@@ -56,7 +56,7 @@ CSS = """
 .tempat-gambar small {opacity: .65;}
 /* Kartu memakai warna transparan dan warna teks bawaan tema, jadi cocok di mode terang dan gelap */
 .kartu {background: rgba(120, 125, 135, .07); border: 1px solid rgba(120, 125, 135, .28);
-        border-left: 6px solid var(--w); border-radius: .8rem; padding: .9rem 1.1rem;}
+        border-left: 6px solid var(--w); border-radius: .8rem; padding: .9rem 1.1rem; margin-bottom: .8rem;}
 .kartu-label {font-size: .82rem; opacity: .72; font-weight: 600; text-transform: uppercase;
               letter-spacing: .04em;}
 .kartu-angka {font-size: 1.85rem; font-weight: 700; color: var(--w); line-height: 1.25;}
