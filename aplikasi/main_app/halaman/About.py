@@ -27,16 +27,15 @@ st.subheader("Cara memakai aplikasi")
 st.markdown("Ikuti langkah berikut jika baru pertama kali membuka aplikasi ini.")
 LANGKAH = [
     ("halaman/Landing_Page.py", "Beranda", ":material/home:",
-     "Lihat peta. Pilih **Selisih IPM** untuk melihat daerah yang IPM-nya di atas (teal) atau di bawah (merah) "
-     "perkiraan. Arahkan kursor ke daerah untuk melihat angkanya."),
+     "Lihat peta IPM aktual. Makin gelap warnanya, makin tinggi IPM daerah itu. Pilih **Wilayah** dan "
+     "**Tahun**, lalu arahkan kursor ke daerah untuk melihat angkanya."),
     ("halaman/Daftar_wilayah.py", "Daftar Wilayah", ":material/table_view:",
      "Cari daerah dengan mengetik namanya, atau saring berdasarkan provinsi, tahun, dan status. "
      "Tabelnya bisa diunduh."),
-    ("halaman/Prediksi_Data_Tersedia.py", "Prediksi Data Tersedia", ":material/query_stats:",
-     "Pilih satu daerah dan tahun. Aplikasi menampilkan IPM aktual, IPM prediksi, statusnya, "
-     "dan perkembangannya dari tahun ke tahun."),
-    ("halaman/Prediksi_Data_Baru.py", "Prediksi Data Baru", ":material/edit_note:",
-     "Masukkan lima indikator sendiri (atau tekan **Isi contoh**), lalu tekan **Hitung IPM prediksi**."),
+    ("halaman/Simulasi_Page.py", "Simulasi Prediksi", ":material/insights:",
+     "Pilih jenis prediksi. **Data tersedia**: pilih satu daerah dan tahun untuk melihat IPM aktual, IPM prediksi, "
+     "statusnya, dan perkembangannya dari tahun ke tahun. **Data baru**: masukkan lima indikator sendiri "
+     "(atau tekan **Isi contoh**), lalu tekan **Hitung IPM prediksi**."),
     ("halaman/Evaluasi_Model.py", "Evaluasi Model", ":material/analytics:",
      "Lihat seberapa akurat model. Buka kotak bertanda :material/lightbulb: untuk penjelasan sederhana."),
 ]

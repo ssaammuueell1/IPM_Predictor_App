@@ -11,8 +11,7 @@ pasang_gaya()
 navigasi = st.navigation([
     st.Page("halaman/Landing_Page.py", title="Beranda", icon=":material/home:", default=True),
     st.Page("halaman/Daftar_wilayah.py", title="Daftar Wilayah", icon=":material/table_view:"),
-    st.Page("halaman/Prediksi_Data_Tersedia.py", title="Prediksi Data Tersedia", icon=":material/query_stats:"),
-    st.Page("halaman/Prediksi_Data_Baru.py", title="Prediksi Data Baru", icon=":material/edit_note:"),
+    st.Page("halaman/Prediksi_IPM.py", title="Prediksi IPM", icon=":material/insights:"),
     st.Page("halaman/Evaluasi_Model.py", title="Evaluasi Model", icon=":material/analytics:"),
     st.Page("halaman/About.py", title="Tentang", icon=":material/info:"),
 ], position="top")

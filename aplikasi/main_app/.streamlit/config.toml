@@ -18,6 +18,9 @@ greenColor = "#0F766E"
 blueColor = "#0F766E"
 grayColor = "#6B7280"
 redColor = "#C0392B"
+dataframeHeaderBackgroundColor = "#0F766E"   
+dataframeHeaderTextColor = "#FFFFFF"         
+dataframeBorderColor = "#E5E7EB"  
 chartCategoricalColors = ["#0F766E", "#9CA3AF", "#C0392B", "#374151"]
 
 # Mode gelap. Pilih lewat menu ⋮ > Settings, atau otomatis mengikuti pengaturan perangkat.
@@ -31,4 +34,6 @@ greenColor = "#2DB3A6"
 blueColor = "#2DB3A6"
 grayColor = "#9CA3AF"
 redColor = "#E5644E"
+dataframeHeaderBackgroundColor = "#14918A"
+dataframeHeaderTextColor = "#FFFFFF"
 chartCategoricalColors = ["#2DB3A6", "#9CA3AF", "#E5644E", "#D1D5DB"]

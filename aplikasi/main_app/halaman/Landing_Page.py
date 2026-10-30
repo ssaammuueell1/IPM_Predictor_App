@@ -24,29 +24,31 @@ hero("Prediksi IPM di Wilayah dengan",
 # ---------- Pilihan ----------
 PILIHAN = {
     # Skala dimulai dari warna muda (bukan abu-abu) supaya tidak tertukar dengan daerah di luar cakupan
-    "IPM aktual": {"kolom": "IPM", "skala": [[0, "#CDE8E4"], [1, "#0F766E"]],
-                   "arti": "Makin gelap (teal) = IPM makin tinggi."},
-    "Penduduk miskin (%)": {"kolom": "PPM", "skala": [[0, "#F5D5CF"], [1, "#C0392B"]],
-                            "arti": "Makin merah = makin banyak penduduk miskin."},
-    "Selisih IPM": {"kolom": "Selisih", "skala": [[0, "#C0392B"], [0.5, "#C4CAD3"], [1, "#0F766E"]],
-                    "arti": "Teal = IPM di atas prediksi, merah = di bawah prediksi."},
+    "IPM aktual": {"kolom": "IPM", "skala": [[0, "#CDE8E4"], [1, "#0F766E"]],"arti": "Makin gelap (teal) = IPM makin tinggi."},
+    # "Penduduk miskin (%)": {"kolom": "PPM", "skala": [[0, "#F5D5CF"], [1, "#C0392B"]],
+    #                         "arti": "Makin merah = makin banyak penduduk miskin."},
+    # "IPM Prediksi": {"kolom": "IPM_prediksi", "skala": [[0, "#C0392B"], [0.5, "#C4CAD3"], [1, "#0F766E"]],
+    #                 "arti": "Teal = IPM di atas prediksi, merah = di bawah prediksi."},
 }
+pilihan = "IPM aktual"
+atur = PILIHAN[pilihan]
+# st.write(atur)
 with st.container(border=True):
-    k1, k2, k3 = st.columns([3, 2, 2])
-    pilihan = k1.segmented_control("Warnai peta berdasarkan", list(PILIHAN), default="Selisih IPM")
-    pilihan = pilihan or "Selisih IPM"
+    k2, k3 = st.columns([2, 2])
+    # pilihan = k1.segmented_control("Warnai peta berdasarkan", list(PILIHAN), default="IPM Prediksi")
+    # pilihan = pilihan or "IPM Prediksi"  # jika tombol yang aktif diklik lagi, kembali ke default
     wilayah = k2.selectbox("Wilayah", [SEMUA] + sorted(tabel["Provinsi"].unique()))
     daftar_tahun = sorted(tabel["Tahun"].unique())
     tahun = k3.select_slider("Tahun", options=daftar_tahun, value=daftar_tahun[-1])
 
-atur = PILIHAN[pilihan]
-data_tahun = tabel[tabel["Tahun"] == tahun]
+# atur = PILIHAN[pilihan]
+    data_tahun = tabel[tabel["Tahun"] == tahun]
 
 # Batas skala warna dihitung dari seluruh 114 daerah, supaya warna antarprovinsi bisa dibandingkan
-if atur["kolom"] == "Selisih":
-    batas = max(data_tahun["Selisih"].abs().max(), ambang)
-    zmin, zmax = -batas, batas
-else:
+# if atur["kolom"] == "IPM_prediksi":  # selisih IPM bisa negatif, jadi ambil nilai mutlak
+#     batas = max(data_tahun["IPM_prediksi"].abs().max(), ambang)
+#     zmin, zmax = -batas, batas
+# else:
     zmin, zmax = data_tahun[atur["kolom"]].min(), data_tahun[atur["kolom"]].max()
 
 if wilayah == SEMUA:
@@ -104,23 +106,24 @@ fig.add_trace(go.Choroplethmap(
                   len=0.5, thickness=12),
 ))
 # Gaya peta kosong (tanpa latar putih), sehingga peta mengikuti warna latar halaman
-PETA_TANPA_LATAR = {"version": 8, "sources": {}, "layers": []}
-fig.update_layout(map=dict(style=PETA_TANPA_LATAR, center=tengah, zoom=zoom),
+# PETA_TANPA_LATAR = {"version": 8, "sources": {}, "layers": []}
+fig.update_layout(map=dict(style="white-bg", center=tengah, zoom=zoom),
                   height=480, margin=dict(l=0, r=0, t=0, b=0), separators=",.")
 with st.container(border=True):
     st.plotly_chart(fig, width="stretch", config={"scrollZoom": True, "displayModeBar": False})
 st.caption(f"{atur['arti']} Abu-abu muda = di luar cakupan penelitian. Arahkan kursor ke daerah untuk rinciannya. "
            f"Batas wilayah: geoBoundaries (CC BY 4.0).")
-penjelasan(
-    "- **IPM aktual**: makin gelap warnanya, makin tinggi IPM daerah itu.\n"
-    "- **Penduduk miskin (%)**: makin merah, makin banyak penduduk miskin.\n"
-    "- **Selisih IPM**: membandingkan IPM aktual dengan IPM yang diperkirakan model. "
-    "**Teal** = IPM lebih tinggi dari perkiraan (berprestasi), **merah** = lebih rendah dari perkiraan "
-    f"(tertinggal), **abu-abu** = kurang lebih sesuai perkiraan (selisih di dalam ±{angka(ambang)}).\n"
-    "- Gunakan pilihan **Wilayah** untuk memperbesar satu provinsi, dan geser **Tahun** untuk melihat perubahan. "
-    "Peta juga bisa diperbesar dengan menggulir mouse.",
-    judul="Cara membaca peta",
-)
+st.write("Cara Membaca peta: makin gelap warnanya, makin tinggi IPM daerah itu.")
+# penjelasan(
+#     "- **IPM aktual**: makin gelap warnanya, makin tinggi IPM daerah itu.\n"
+#     "- **Penduduk miskin (%)**: makin merah, makin banyak penduduk miskin.\n"
+#     "- **Selisih IPM**: membandingkan IPM aktual dengan IPM yang diperkirakan model. "
+#     "**Teal** = IPM lebih tinggi dari perkiraan (berprestasi), **merah** = lebih rendah dari perkiraan "
+#     f"(tertinggal), **abu-abu** = kurang lebih sesuai perkiraan (selisih di dalam ±{angka(ambang)}).\n"
+#     "- Gunakan pilihan **Wilayah** untuk memperbesar satu provinsi, dan geser **Tahun** untuk melihat perubahan. "
+#     "Peta juga bisa diperbesar dengan menggulir mouse.",
+#     judul="Cara membaca peta",
+# )
 
 # ---------- Lima tertinggi dan terendah ----------
 kolom_tampil = ["Kabupaten/Kota", "Provinsi", atur["kolom"]]
