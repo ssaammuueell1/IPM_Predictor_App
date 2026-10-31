@@ -44,7 +44,7 @@ with st.container(border=True):
 # atur = PILIHAN[pilihan]
     data_tahun = tabel[tabel["Tahun"] == tahun]
 
-# Batas skala warna dihitung dari seluruh 114 daerah, supaya warna antarprovinsi bisa dibandingkan
+# Batas skala warna dihitung dari seluruh 115 daerah, supaya warna antarprovinsi bisa dibandingkan
 # if atur["kolom"] == "IPM_prediksi":  # selisih IPM bisa negatif, jadi ambil nilai mutlak
 #     batas = max(data_tahun["IPM_prediksi"].abs().max(), ambang)
 #     zmin, zmax = -batas, batas
@@ -114,16 +114,7 @@ with st.container(border=True):
 st.caption(f"{atur['arti']} Abu-abu muda = di luar cakupan penelitian. Arahkan kursor ke daerah untuk rinciannya. "
            f"Batas wilayah: geoBoundaries (CC BY 4.0).")
 st.write("Cara Membaca peta: makin gelap warnanya, makin tinggi IPM daerah itu.")
-# penjelasan(
-#     "- **IPM aktual**: makin gelap warnanya, makin tinggi IPM daerah itu.\n"
-#     "- **Penduduk miskin (%)**: makin merah, makin banyak penduduk miskin.\n"
-#     "- **Selisih IPM**: membandingkan IPM aktual dengan IPM yang diperkirakan model. "
-#     "**Teal** = IPM lebih tinggi dari perkiraan (berprestasi), **merah** = lebih rendah dari perkiraan "
-#     f"(tertinggal), **abu-abu** = kurang lebih sesuai perkiraan (selisih di dalam ±{angka(ambang)}).\n"
-#     "- Gunakan pilihan **Wilayah** untuk memperbesar satu provinsi, dan geser **Tahun** untuk melihat perubahan. "
-#     "Peta juga bisa diperbesar dengan menggulir mouse.",
-#     judul="Cara membaca peta",
-# )
+
 
 # ---------- Lima tertinggi dan terendah ----------
 kolom_tampil = ["Kabupaten/Kota", "Provinsi", atur["kolom"]]

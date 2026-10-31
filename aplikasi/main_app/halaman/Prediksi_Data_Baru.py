@@ -57,11 +57,11 @@ def tampilkan_prediksi_data_baru():
                 LABEL_PREDIKTOR[k],
                 # min_value=0.0,
                 # max_value=100.0 if k in INDIKATOR_PERSEN else None,
-                step=0.01, format="%.2f", placeholder="Isi nilai", key=KUNCI[k],
+                value=None, step=0.01, format="%.2f", placeholder="Isi nilai", key=KUNCI[k],
                 help=f"Rentang data: {angka(rentang[k]['min'])} - {angka(rentang[k]['max'])}",
             )
         ipm_aktual = kanan.number_input("IPM aktual (opsional)",
-                                        step=0.01, format="%.2f", key=KUNCI["IPM"],
+                                        value=None, step=0.01, format="%.2f", key=KUNCI["IPM"],
                                         placeholder="Kosongkan jika tidak ada",
                                         help="Isi untuk melihat selisih dan status.")
         kirim = st.form_submit_button("Hitung IPM prediksi", type="primary", icon=":material/calculate:")
@@ -111,9 +111,9 @@ def tampilkan_prediksi_data_baru():
             st.markdown(":material/summarize: **Artinya:** " + arti_hasil(selisih, ambang, subjek="daerah tersebut"))
             st.plotly_chart(grafik_selisih(selisih, ambang), width="stretch", config={"displayModeBar": False})
             penjelasan(
-                "- Pita ini adalah penggaris selisih (IPM aktual - IPM prediksi). Angka **0** di tengah berarti "
+                "- Kotak di atas adalah selisih (IPM aktual - IPM prediksi). Angka **0** di tengah berarti "
                 "IPM aktual sama persis dengan prediksi.\n"
-                f"- **Area abu-abu di tengah** (-{angka(ambang)} sampai +{angka(ambang)}) = **sesuai prediksi**. "
+                f"- **Area biru di tengah** (-{angka(ambang)} sampai +{angka(ambang)}) = **sesuai prediksi**. "
                 "Selisih sekecil ini masih wajar karena model rata-rata meleset sebesar itu.\n"
                 "- **Area teal di kanan** = **di atas prediksi** (IPM aktual lebih tinggi dari perkiraan).\n"
                 "- **Area merah di kiri** = **di bawah prediksi** (IPM aktual lebih rendah dari perkiraan).\n"

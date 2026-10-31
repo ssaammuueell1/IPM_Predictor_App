@@ -13,9 +13,7 @@ def tampilkan_prediksi_data_tersedia():
     ambang = info["ambang_status"]
     jumlah_daerah = info["jumlah"]["daerah"]
 
-    # hero("Prediksi Data Tersedia",
-    #     "Lihat IPM satu daerah: aktual, prediksi, dan selisihnya dari tahun ke tahun.",
-    #     label="Per daerah")
+
 
     # ---------- Pilihan daerah dan tahun ----------
     with st.container(border=True):
@@ -43,7 +41,7 @@ def tampilkan_prediksi_data_tersedia():
     k1.metric("IPM aktual", angka(baris["IPM"]), border=True)
     k2.metric("IPM prediksi", angka(baris["IPM_prediksi"]), border=True)
     k3.metric("Selisih", ("+" if baris["Selisih"] > 0 else "") + angka(baris["Selisih"]), border=True,
-            help=f"IPM aktual − IPM prediksi. Di luar ±{angka(ambang)} berarti di atas/di bawah prediksi.")
+            help=f"IPM aktual - IPM prediksi. Di luar ±{angka(ambang)} berarti di atas/di bawah prediksi.")
     with st.container(border=True):
         st.markdown(":material/summarize: **Artinya:** " + arti_hasil(baris["Selisih"], ambang))
 
@@ -107,7 +105,7 @@ def tampilkan_prediksi_data_tersedia():
         penjelasan(
             f"- Setiap batang membandingkan indikator {daerah} dengan **rata-rata {jumlah_daerah} daerah** "
             f"pada tahun {tahun}.\n"
-            "- **0%** = sama dengan rata-rata. **+20%** = 20% lebih tinggi dari rata-rata, **−20%** = 20% lebih rendah.\n"
+            "- **0%** = sama dengan rata-rata. **+20%** = 20% lebih tinggi dari rata-rata, **-20%** = 20% lebih rendah.\n"
             "- Teal = di atas rata-rata, abu-abu = di bawah rata-rata.\n"
             "- Hati-hati: **lebih tinggi tidak selalu lebih baik**. Untuk penduduk miskin dan pengangguran, "
             "nilai di atas rata-rata justru kurang baik.\n"

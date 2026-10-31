@@ -32,7 +32,7 @@ LANGKAH = [
     ("halaman/Daftar_wilayah.py", "Daftar Wilayah", ":material/table_view:",
      "Cari daerah dengan mengetik namanya, atau saring berdasarkan provinsi, tahun, dan status. "
      "Tabelnya bisa diunduh."),
-    ("halaman/Simulasi_Page.py", "Simulasi Prediksi", ":material/insights:",
+    ("halaman/Prediksi_IPM.py", "Prediksi IPM", ":material/insights:",
      "Pilih jenis prediksi. **Data tersedia**: pilih satu daerah dan tahun untuk melihat IPM aktual, IPM prediksi, "
      "statusnya, dan perkembangannya dari tahun ke tahun. **Data baru**: masukkan lima indikator sendiri "
      "(atau tekan **Isi contoh**), lalu tekan **Hitung IPM prediksi**."),
@@ -118,3 +118,20 @@ st.markdown(
     "- Hasilnya **bukan hubungan sebab-akibat**.\n"
     "- Model hanya andal untuk nilai indikator di dalam rentang data penelitian."
 )
+
+st.subheader("Perancang")
+with st.container(border=True):
+    kiri, kanan = st.columns(2)
+    kiri.markdown(
+        "**Dirancang oleh**  \n"
+        "Samuel Gregorio Criswell Kastono  \n"
+        "NIM 535230077  \n"
+        "Program Studi Teknik Informatika"
+    )
+    kanan.markdown(
+        "**Dosen pembimbing**  \n"
+        "1. DESI ARISANDI, S.Kom., M.T.I.   \n"
+        "2. Yemima Monica Geasela, S.Kom., M.Kom."
+    )
+st.caption("Aplikasi ini dibuat sebagai bagian dari skripsi: Prediksi IPM di Wilayah dengan Kemiskinan Tinggi "
+           "di Indonesia Menggunakan XGBoost Regression.")

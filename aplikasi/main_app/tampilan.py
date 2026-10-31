@@ -1,6 +1,4 @@
-"""Komponen tampilan yang dipakai bersama oleh semua halaman (kepala halaman, gambar, kartu, grafik selisih)."""
-from pathlib import Path
-
+"""Komponen tampilan yang dipakai bersama oleh semua halaman (kepala halaman, kartu, grafik selisih)."""
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -11,10 +9,6 @@ WARNA_UTAMA = "#0F766E"      # satu-satunya warna aksen
 WARNA_SEKUNDER = "#9CA3AF"   # abu-abu untuk pembanding
 WARNA_REDUP = "#D1D5DB"      # abu-abu muda untuk latar/baseline
 WARNA_GARIS = "#9CA3AF"
-
-# Folder gambar. Simpan gambar dengan nama yang sama seperti di placeholder (format jpg, png, atau webp).
-FOLDER_GAMBAR = Path(__file__).resolve().parent / "gambar"
-EKSTENSI_GAMBAR = (".jpg", ".jpeg", ".png", ".webp", ".gif")
 
 
 def transparan(warna_hex, alpha):
@@ -29,94 +23,25 @@ BADGE_STATUS = {STATUS_ATAS: "green", STATUS_SESUAI: "gray", STATUS_BAWAH: "red"
 IKON_STATUS = {STATUS_ATAS: ":material/trending_up:", STATUS_SESUAI: ":material/check_circle:",
                STATUS_BAWAH: ":material/trending_down:"}
 
-CSS = """
-<style>
-/* Margin kiri-kanan yang wajar dan lebar isi maksimum */
-[data-testid="stMainBlockContainer"], .block-container {
-    padding: 4.2rem 2.5rem 2rem 2.5rem !important; max-width: 1480px;}
-/* Kepala halaman: tanpa kotak, teks mengikuti warna tema */
-.kepala {padding: .4rem 0 .2rem 0;}
-.kepala-label {font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700;
-               opacity: .6; margin-bottom: .4rem;}
-.kepala-judul {font-size: 2.5rem; font-weight: 800; line-height: 1.15; letter-spacing: -.01em;}
-.kepala-judul .aksen {color: #14918A;}   /* teal yang terbaca di mode terang dan gelap */
-.kepala-judul.kecil {font-size: 2rem;}
-.kepala-desk {margin-top: .7rem; font-size: 1.08rem; line-height: 1.55; opacity: .8; max-width: 42rem;}
-.kepala-chip {display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem;}
-.kepala-chip span {border: 1px solid rgba(120, 125, 135, .35); border-radius: 999px; padding: .25rem .8rem;
-                   font-size: .88rem; font-weight: 600;}
-.garis-kepala {border: none; border-top: 1px solid rgba(120, 125, 135, .28); margin: 1rem 0 1.4rem 0;}
-/* Gambar dan tempat gambar */
-[data-testid="stImage"] img {border-radius: 1rem; object-fit: cover;}
-.tempat-gambar {border: 2px dashed rgba(120, 125, 135, .45); border-radius: 1rem; display: flex;
-                flex-direction: column; align-items: center; justify-content: center; text-align: center;
-                background: rgba(120, 125, 135, .06); padding: 1rem; gap: .3rem;}
-.tempat-gambar b {font-size: .95rem;}
-.tempat-gambar code {font-size: .8rem; white-space: normal; word-break: break-all;}
-.tempat-gambar small {opacity: .65;}
-/* Kartu memakai warna transparan dan warna teks bawaan tema, jadi cocok di mode terang dan gelap */
-.kartu {background: rgba(120, 125, 135, .07); border: 1px solid rgba(120, 125, 135, .28);
-        border-left: 6px solid var(--w); border-radius: .8rem; padding: .9rem 1.1rem; margin-bottom: .8rem;}
-.kartu-label {font-size: .82rem; opacity: .72; font-weight: 600; text-transform: uppercase;
-              letter-spacing: .04em;}
-.kartu-angka {font-size: 1.85rem; font-weight: 700; color: var(--w); line-height: 1.25;}
-.kartu-sub {font-size: .88rem; opacity: .85; line-height: 1.45;}
-</style>
-"""
-
 
 def pasang_gaya():
-    """Sisipkan CSS bersama. Dipanggil sekali di Beranda.py sebelum halaman dijalankan."""
-    st.html(CSS)
+    """Tampilan memakai gaya bawaan Streamlit, jadi tidak ada CSS tambahan."""
+    pass
 
 
-def cari_gambar(nama):
-    """Kembalikan path gambar gambar/<nama>.<ekstensi> jika ada, selain itu None."""
-    for ekstensi in EKSTENSI_GAMBAR:
-        path = FOLDER_GAMBAR / f"{nama}{ekstensi}"
-        if path.exists():
-            return path
-    return None
+def hero(judul, deskripsi, label=None, gambar_nama=None, aksen="", chip=None, besar=False):
+    """Kepala halaman sederhana: judul, satu kalimat penjelasan, dan keterangan singkat (jika ada)."""
+    st.title(f"{judul} {aksen}".strip())
+    st.write(deskripsi)
+    if chip:
+        st.caption(" · ".join(chip))
+    st.divider()
 
 
-def gambar(nama, tinggi=260, saran="1200 × 800 px"):
-    """Tampilkan gambar/<nama>.jpg (atau .png/.webp). Jika belum ada, tampilkan kotak placeholder."""
-    path = cari_gambar(nama)
-    if path:
-        st.image(str(path), width="stretch")
-    else:
-        st.markdown(
-            f"<div class='tempat-gambar' style='height:{tinggi}px'>"
-            f"<span style='font-size:1.8rem'>🖼️</span><b>Tempat gambar</b>"
-            f"<code>gambar/{nama}.jpg</code><small>Saran ukuran {saran}</small></div>",
-            unsafe_allow_html=True,
-        )
-
-
-def hero(judul, deskripsi, label="Prediksi IPM · XGBoost", gambar_nama=None, aksen="", chip=None, besar=False):
-    """Kepala halaman tanpa kotak: label kecil, judul (bagian `aksen` berwarna), deskripsi, dan gambar di kanan."""
-    teks_judul = judul + (f" <span class='aksen'>{aksen}</span>" if aksen else "")
-    teks_chip = ("<div class='kepala-chip'>" + "".join(f"<span>{c}</span>" for c in chip) + "</div>") if chip else ""
-    isi = (f"<div class='kepala'><div class='kepala-label'>{label}</div>"
-           f"<div class='kepala-judul{'' if besar else ' kecil'}'>{teks_judul}</div>"
-           f"<div class='kepala-desk'>{deskripsi}</div>{teks_chip}</div>")
-    if gambar_nama:
-        kiri, kanan = st.columns([3, 2] if besar else [2, 1], gap="large", vertical_alignment="center")
-        kiri.markdown(isi, unsafe_allow_html=True)
-        with kanan:
-            gambar(gambar_nama, tinggi=280 if besar else 180, saran="1200 × 800 px" if besar else "900 × 500 px")
-    else:
-        st.markdown(isi, unsafe_allow_html=True)
-    st.markdown("<hr class='garis-kepala'>", unsafe_allow_html=True)
-
-
-def kartu(label, angka_utama, keterangan, warna=WARNA_UTAMA):
-    """Kartu ringkas dengan garis warna di kiri."""
-    st.markdown(
-        f"<div class='kartu' style='--w:{warna}'><div class='kartu-label'>{label}</div>"
-        f"<div class='kartu-angka'>{angka_utama}</div><div class='kartu-sub'>{keterangan}</div></div>",
-        unsafe_allow_html=True,
-    )
+def kartu(label, angka_utama, keterangan, warna=None):
+    """Angka ringkas memakai komponen metric bawaan Streamlit."""
+    st.metric(label, angka_utama, border=True)
+    st.caption(keterangan)
 
 
 def penjelasan(isi, judul="Cara membaca grafik ini", buka=False):

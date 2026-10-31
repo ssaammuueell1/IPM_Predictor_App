@@ -1,39 +1,8 @@
-# Palet sederhana: latar netral (putih/abu), satu warna aksen (teal), merah hanya untuk status "di bawah".
+# Tampilan memakai tema bawaan Streamlit. Hanya warna aksen yang diatur (teal),
+# supaya sama dengan warna grafik dan status.
 
-# Pengaturan yang sama untuk mode terang dan gelap
-[theme]
-showWidgetBorder = true
-baseRadius = "0.7rem"
-headingFontWeights = [700, 700, 600, 600, 600, 600]
-metricValueFontSize = "1.9rem"
-
-# Mode terang
 [theme.light]
 primaryColor = "#0F766E"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#F4F5F7"
-textColor = "#1F2328"
-borderColor = "#E5E7EB"
-greenColor = "#0F766E"
-blueColor = "#0F766E"
-grayColor = "#6B7280"
-redColor = "#C0392B"
-dataframeHeaderBackgroundColor = "#0F766E"   
-dataframeHeaderTextColor = "#FFFFFF"         
-dataframeBorderColor = "#E5E7EB"  
-chartCategoricalColors = ["#0F766E", "#9CA3AF", "#C0392B", "#374151"]
 
-# Mode gelap. Pilih lewat menu ⋮ > Settings, atau otomatis mengikuti pengaturan perangkat.
 [theme.dark]
 primaryColor = "#14918A"
-backgroundColor = "#111315"
-secondaryBackgroundColor = "#1C1F23"
-textColor = "#E6E8EB"
-borderColor = "#2C3036"
-greenColor = "#2DB3A6"
-blueColor = "#2DB3A6"
-grayColor = "#9CA3AF"
-redColor = "#E5644E"
-dataframeHeaderBackgroundColor = "#14918A"
-dataframeHeaderTextColor = "#FFFFFF"
-chartCategoricalColors = ["#2DB3A6", "#9CA3AF", "#E5644E", "#D1D5DB"]
