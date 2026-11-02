@@ -1,4 +1,5 @@
 import streamlit as st
+from pathlib import Path
 
 from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR
 from tampilan import hero, penjelasan
@@ -105,5 +106,15 @@ with st.container(border=True):
         "1. Desi Arisandi, S.Kom., M.T.I.  \n"
         "2. Yemima Monica Geasela, S.Kom., M.Kom."
     )
+
+pdf_path = Path(__file__).resolve().parents[3] / "Manual_Book.pdf"
+
+st.download_button(
+    label="Download Buku Panduan Aplikasi (PDF)",
+    data=pdf_path.read_bytes(),
+    file_name="Manual_Book.pdf",
+    mime="application/pdf",
+    type="primary",
+)
 st.caption("Aplikasi ini dibuat sebagai bagian dari skripsi: Prediksi IPM di Wilayah dengan Kemiskinan Tinggi "
            "di Indonesia Menggunakan XGBoost Regression.")
