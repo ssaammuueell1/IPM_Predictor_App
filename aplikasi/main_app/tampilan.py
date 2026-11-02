@@ -24,18 +24,33 @@ IKON_STATUS = {STATUS_ATAS: ":material/trending_up:", STATUS_SESUAI: ":material/
                STATUS_BAWAH: ":material/trending_down:"}
 
 
+GAYA = """
+<style>
+/* Kepala halaman: pita teal lembut */
+.st-key-kepala {background: linear-gradient(120deg, rgba(15,118,110,.14), rgba(15,118,110,.03));
+  border-left: 6px solid #0F766E; border-radius: 12px; padding: 1.1rem 1.4rem 1.2rem; margin-bottom: .8rem;}
+/* Judul bagian: garis aksen di kiri */
+[data-testid="stHeading"] h3 {border-left: 4px solid #0F766E; padding-left: .6rem;}
+/* Kartu angka: latar teal tipis */
+[data-testid="stMetric"] {background: rgba(15,118,110,.06);}
+/* Kartu fitur & langkah di Beranda: garis teal di atas */
+[class*="st-key-kartu"] {border-top: 4px solid #0F766E !important;}
+</style>
+"""
+
+
 def pasang_gaya():
-    """Tampilan memakai gaya bawaan Streamlit, jadi tidak ada CSS tambahan."""
-    pass
+    """Sedikit warna aksen teal (kepala halaman, judul bagian, kartu). Transparan agar cocok di mode terang/gelap."""
+    st.html(GAYA)
 
 
 def hero(judul, deskripsi, label=None, gambar_nama=None, aksen="", chip=None, besar=False):
     """Kepala halaman sederhana: judul, satu kalimat penjelasan, dan keterangan singkat (jika ada)."""
-    st.title(f"{judul} {aksen}".strip())
-    st.write(deskripsi)
-    if chip:
-        st.caption(" · ".join(chip))
-    st.divider()
+    with st.container(key="kepala"):
+        st.title(f"{judul} {aksen}".strip())
+        st.write(deskripsi)
+        if chip:
+            st.caption(" · ".join(chip))
 
 
 def kartu(label, angka_utama, keterangan, warna=None):

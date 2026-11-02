@@ -1,127 +1,109 @@
-import math
-
-import plotly.graph_objects as go
 import streamlit as st
 
-from utils import muat_tabel, muat_info, muat_peta, angka
-from tampilan import hero, transparan, penjelasan
+from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR
+from tampilan import hero, penjelasan
 
-tabel = muat_tabel()
 info = muat_info()
-peta = muat_peta()
-ambang = info["ambang_status"]
+tabel = muat_tabel()
 jumlah = info["jumlah"]
-SEMUA = "Seluruh Indonesia"
+ambang = angka(info["ambang_status"])
 
-hero("Prediksi IPM di Wilayah dengan",
-     "Membandingkan IPM aktual tiap kabupaten/kota dengan IPM yang diperkirakan model XGBoost "
-     "dari kondisi sosial-ekonominya.",
-     aksen="Kemiskinan Tinggi di Indonesia", besar=True,
-     chip=[f"{jumlah['daerah']} kabupaten/kota", f"{tabel['Provinsi'].nunique()} provinsi",
-           f"{jumlah['tahun_awal']}-{jumlah['tahun_akhir']}",
-           ])
+hero("Prediksi IPM di Wilayah dengan Kemiskinan Tinggi di Indonesia",
+     "Membandingkan IPM aktual tiap kabupaten/kota dengan IPM yang diperkirakan model XGBoost Regression "
+     "dari kondisi sosial-ekonominya.")
 
-# ---------- Pilihan ----------
-PILIHAN = {
-    # Skala dimulai dari warna muda (bukan abu-abu) supaya tidak tertukar dengan daerah di luar cakupan
-    "IPM aktual": {"kolom": "IPM", "skala": [[0, "#CDE8E4"], [1, "#0F766E"]],"arti": "Makin gelap (teal) = IPM makin tinggi."},
-    # "Penduduk miskin (%)": {"kolom": "PPM", "skala": [[0, "#F5D5CF"], [1, "#C0392B"]],
-    #                         "arti": "Makin merah = makin banyak penduduk miskin."},
-    # "IPM Prediksi": {"kolom": "IPM_prediksi", "skala": [[0, "#C0392B"], [0.5, "#C4CAD3"], [1, "#0F766E"]],
-    #                 "arti": "Teal = IPM di atas prediksi, merah = di bawah prediksi."},
-}
-pilihan = "IPM aktual"
-atur = PILIHAN[pilihan]
-# st.write(atur)
-with st.container(border=True):
-    k2, k3 = st.columns([2, 2])
-    # pilihan = k1.segmented_control("Warnai peta berdasarkan", list(PILIHAN), default="IPM Prediksi")
-    # pilihan = pilihan or "IPM Prediksi"  # jika tombol yang aktif diklik lagi, kembali ke default
-    wilayah = k2.selectbox("Wilayah", [SEMUA] + sorted(tabel["Provinsi"].unique()))
-    daftar_tahun = sorted(tabel["Tahun"].unique())
-    tahun = k3.select_slider("Tahun", options=daftar_tahun, value=daftar_tahun[-1])
+# ---------- Fitur aplikasi ----------
+st.subheader("Fitur Aplikasi")
+FITUR = [
+    ("halaman/Landing_Page.py", "Beranda", ":material/home:",
+     "Informasi dasar aplikasi, cakupan wilayah, dan panduan penggunaan."),
+    ("halaman/Prediksi_IPM.py", "Prediksi IPM", ":material/insights:",
+     "Lihat IPM prediksi dari data tersedia atau masukkan data baru."),
+    ("halaman/Evaluasi_Model.py", "Evaluasi Model", ":material/analytics:",
+     "Kinerja model pada data uji dan tiap fold beserta metrik evaluasi (MAE, RMSE, R²)."),
+    ("halaman/Daftar_wilayah.py", "Daftar Wilayah", ":material/table_view:",
+     "Seluruh daerah dalam cakupan beserta IPM prediksi, selisih, dan jenis data (latih/uji)."),
+]
+for i, (kolom, (halaman, nama, ikon, teks)) in enumerate(zip(st.columns(4), FITUR)):
+    with kolom.container(border=True, height="stretch", key=f"kartu_fitur{i}"):
+        st.markdown(f"#### :primary[{ikon}] {nama}")
+        st.write(teks)
+        st.page_link(halaman, label="Buka", icon=ikon)
 
-# atur = PILIHAN[pilihan]
-    data_tahun = tabel[tabel["Tahun"] == tahun]
-
-# Batas skala warna dihitung dari seluruh 115 daerah, supaya warna antarprovinsi bisa dibandingkan
-# if atur["kolom"] == "IPM_prediksi":  # selisih IPM bisa negatif, jadi ambil nilai mutlak
-#     batas = max(data_tahun["IPM_prediksi"].abs().max(), ambang)
-#     zmin, zmax = -batas, batas
-# else:
-    zmin, zmax = data_tahun[atur["kolom"]].min(), data_tahun[atur["kolom"]].max()
-
-if wilayah == SEMUA:
-    data = data_tahun
-    fokus = peta["features"]
-else:
-    data = data_tahun[data_tahun["Provinsi"] == wilayah]
-    fokus = [f for f in peta["features"] if f["properties"]["provinsi"] == wilayah]
-
-id_fokus = {f["id"] for f in fokus}
-luar = [f["id"] for f in fokus if not f["properties"]["cakupan"]]
-latar = [f["id"] for f in peta["features"] if f["id"] not in id_fokus]
-
-
-def posisi_peta(fitur, lebar=1100, tinggi=480):
-    """Titik tengah dan tingkat zoom supaya semua daerah dalam `fitur` terlihat."""
-    barat = min(f["bbox"][0] for f in fitur)
-    selatan = min(f["bbox"][1] for f in fitur)
-    timur = max(f["bbox"][2] for f in fitur)
-    utara = max(f["bbox"][3] for f in fitur)
-    lebar_bujur = max(timur - barat, 0.3)
-    tinggi_lintang = max(utara - selatan, 0.3)
-    zoom = min(math.log2(lebar * 360 / (512 * lebar_bujur)),
-               math.log2(tinggi * 360 / (512 * tinggi_lintang))) - 0.2
-    return {"lat": (selatan + utara) / 2, "lon": (barat + timur) / 2}, min(zoom, 8)
-
-
-tengah, zoom = posisi_peta(fokus)
-
-# ---------- Peta ----------
-# Warna transparan supaya daerah di luar cakupan tetap terlihat di mode terang maupun gelap
-ABU = "#9CA3AF"
-fig = go.Figure()
-if latar:
-    fig.add_trace(go.Choroplethmap(
-        geojson=peta, locations=latar, z=[0] * len(latar),
-        colorscale=[[0, transparan(ABU, 0.08)], [1, transparan(ABU, 0.08)]], showscale=False,
-        marker_line_color=transparan(ABU, 0.30), marker_line_width=0.3, hoverinfo="skip",
-    ))
-fig.add_trace(go.Choroplethmap(
-    geojson=peta, locations=luar, z=[0] * len(luar),
-    colorscale=[[0, transparan(ABU, 0.14)], [1, transparan(ABU, 0.14)]], showscale=False,
-    marker_line_color=transparan(ABU, 0.45), marker_line_width=0.4, hoverinfo="skip",
-))
-fig.add_trace(go.Choroplethmap(
-    geojson=peta, locations=data["Kabupaten/Kota"], z=data[atur["kolom"]],
-    colorscale=atur["skala"], zmin=zmin, zmax=zmax,
-    marker_line_color="rgba(255,255,255,0.6)", marker_line_width=0.6,
-    customdata=data[["Provinsi", "IPM", "IPM_prediksi", "Selisih", "Status", "PPM"]],
-    hovertemplate=("<b>%{location}</b> · %{customdata[0]}<br>"
-                   "IPM aktual %{customdata[1]:.2f} · IPM prediksi %{customdata[2]:.2f}<br>"
-                   "Selisih %{customdata[3]:+.2f} · %{customdata[4]}<br>"
-                   "Penduduk miskin %{customdata[5]:.2f}%<extra></extra>"),
-    colorbar=dict(title=dict(text=pilihan, side="top"), orientation="h", x=0.5, y=0.0,
-                  len=0.5, thickness=12),
-))
-# Gaya peta kosong (tanpa latar putih), sehingga peta mengikuti warna latar halaman
-# PETA_TANPA_LATAR = {"version": 8, "sources": {}, "layers": []}
-fig.update_layout(map=dict(style="white-bg", center=tengah, zoom=zoom),
-                  height=480, margin=dict(l=0, r=0, t=0, b=0), separators=",.")
-with st.container(border=True):
-    st.plotly_chart(fig, width="stretch", config={"scrollZoom": True, "displayModeBar": False})
-st.caption(f"{atur['arti']} Abu-abu muda = di luar cakupan penelitian. Arahkan kursor ke daerah untuk rinciannya. "
-           f"Batas wilayah: geoBoundaries (CC BY 4.0).")
-st.write("Cara Membaca peta: makin gelap warnanya, makin tinggi IPM daerah itu.")
-
-
-# ---------- Lima tertinggi dan terendah ----------
-kolom_tampil = ["Kabupaten/Kota", "Provinsi", atur["kolom"]]
-urut = data.sort_values(atur["kolom"], ascending=False)[kolom_tampil].rename(columns={atur["kolom"]: pilihan})
-n = min(5, len(urut))
+# ---------- Cakupan dan periode ----------
 kiri, kanan = st.columns(2)
-kiri.markdown(f"**{n} tertinggi ({tahun})**")
-kiri.dataframe(urut.head(n).style.format({pilihan: "{:.2f}"}, decimal=","), hide_index=True, width="stretch")
-kanan.markdown(f"**{n} terendah ({tahun})**")
-kanan.dataframe(urut.tail(n).iloc[::-1].style.format({pilihan: "{:.2f}"}, decimal=","), hide_index=True, width="stretch")
+with kiri.container(border=True, height="stretch"):
+    st.markdown("#### :primary[:material/location_on:] Cakupan Wilayah")
+    st.write("Kabupaten/kota dengan persentase penduduk miskin di atas 15% selama tiga tahun berturut-turut "
+             "(2018–2020), mengacu pada kriteria wilayah kemiskinan tinggi Bappenas.")
+    st.markdown(f"**Jumlah: {jumlah['daerah']} kabupaten/kota di {tabel['Provinsi'].nunique()} provinsi.**")
+with kanan.container(border=True, height="stretch"):
+    st.markdown("#### :primary[:material/calendar_month:] Periode & Variabel")
+    st.write(f"Data {jumlah['tahun_awal']}–{jumlah['tahun_akhir']} ({angka(jumlah['baris'], 0)} baris). "
+             "Target: Indeks Pembangunan Manusia (IPM).")
+    st.markdown("**Prediktor:** " + ", ".join(LABEL_PREDIKTOR.values()) + ".")
+    st.caption(f"Data dibagi per kabupaten/kota: {jumlah['daerah_latih']} daerah data latih dan "
+               f"{jumlah['daerah_uji']} daerah data uji. Sumber: Badan Pusat Statistik (BPS).")
+
+# ---------- Cara menggunakan ----------
+st.subheader("Cara Menggunakan")
+LANGKAH = [
+    "Buka **Prediksi IPM**. Pilih kabupaten/kota dan tahun (**Data tersedia**), atau masukkan nilai kelima "
+    "indikator sendiri (**Data baru**).",
+    "Lihat **IPM prediksi**, **selisih** (IPM aktual − IPM prediksi), dan **statusnya**.",
+    "Periksa ketepatan model di halaman **Evaluasi Model**.",
+]
+for kolom, (nomor, teks) in zip(st.columns(3), enumerate(LANGKAH, 1)):
+    with kolom.container(border=True, height="stretch", key=f"kartu_langkah{nomor}"):
+        st.markdown(f"#### :primary[Langkah {nomor}]")
+        st.markdown(teks)
+
+# ---------- Cara membaca hasil ----------
+st.subheader("Cara Membaca Hasil")
+st.markdown(f"**Selisih = IPM aktual − IPM prediksi.** Batas ±{ambang} adalah rata-rata kesalahan model (MAE) "
+            "pada data uji.")
+s1, s2, s3 = st.columns(3)
+s1.success(f"**Di atas prediksi**: selisih lebih dari +{ambang}. IPM lebih tinggi dari daerah lain dengan kondisi serupa.")
+s2.info(f"**Sesuai prediksi**: selisih antara −{ambang} dan +{ambang}. Masih dalam batas kesalahan model.")
+s3.error(f"**Di bawah prediksi**: selisih kurang dari −{ambang}. IPM lebih rendah dari daerah serupa, perlu perhatian lebih.")
+penjelasan(
+    "| Istilah | Arti sederhana |\n"
+    "|---|---|\n"
+    "| **IPM** | Ukuran kualitas hidup dari BPS (0–100): kesehatan, pendidikan, dan pengeluaran. |\n"
+    "| **IPM aktual** | IPM resmi yang dicatat BPS. |\n"
+    "| **IPM prediksi** | IPM yang diperkirakan model dari lima indikator. |\n"
+    "| **Data latih** | Daerah yang dipakai model untuk belajar. IPM prediksinya berasal dari validasi silang "
+    "(k-fold), yaitu ditebak oleh model yang tidak melihat daerah itu. |\n"
+    "| **Data uji** | Daerah yang disisihkan sejak awal dan tidak dipakai untuk belajar. |\n"
+    "| **MAE** | Rata-rata kesalahan model dalam poin IPM. |\n"
+    "| **R²** | Seberapa baik model menjelaskan perbedaan IPM antardaerah (0–1). |",
+    judul="Istilah penting",
+)
+
+# ---------- Batasan ----------
+st.subheader("Batasan Aplikasi")
+st.warning(
+    "- Hasil **bukan peramalan** IPM tahun berikutnya.\n"
+    "- Hasil **bukan hubungan sebab-akibat** antara prediktor dan IPM.\n"
+    "- Model hanya andal untuk nilai indikator di dalam rentang data latih.\n"
+    "- Nilai yang dimasukkan sebaiknya berupa data resmi BPS.",
+    icon=":material/warning:",
+)
+
+# ---------- Perancang ----------
+st.subheader("Perancang")
+with st.container(border=True):
+    kiri, kanan = st.columns(2)
+    kiri.markdown(
+        "**Dirancang oleh**  \n"
+        "Samuel Gregorio Criswell Kastono  \n"
+        "NIM 535230077  \n"
+        "Program Studi Teknik Informatika"
+    )
+    kanan.markdown(
+        "**Dosen pembimbing**  \n"
+        "1. Desi Arisandi, S.Kom., M.T.I.  \n"
+        "2. Yemima Monica Geasela, S.Kom., M.Kom."
+    )
+st.caption("Aplikasi ini dibuat sebagai bagian dari skripsi: Prediksi IPM di Wilayah dengan Kemiskinan Tinggi "
+           "di Indonesia Menggunakan XGBoost Regression.")

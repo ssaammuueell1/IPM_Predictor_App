@@ -19,7 +19,7 @@ WARNA_STATUS = {STATUS_ATAS: "#0F766E", STATUS_SESUAI: "#214A9E", STATUS_BAWAH: 
 
 @st.cache_data
 def muat_tabel():
-    """Tabel IPM prediksi (prediksi silang) untuk 1.026 baris."""
+    """Tabel IPM aktual, IPM prediksi, selisih, status, dan jenis data (latih/uji) untuk seluruh baris."""
     return pd.read_csv(FOLDER_DATA / "tabel_prediksi.csv")
 
 
@@ -30,15 +30,9 @@ def muat_info():
         return json.load(f)
 
 
-@st.cache_data
-def muat_peta():
-    """Batas wilayah kabupaten/kota dalam format GeoJSON (sumber: geoBoundaries, CC BY 4.0)."""
-    with open(FOLDER_DATA / "batas_kabkota.geojson", encoding="utf-8") as f:
-        return json.load(f)
-
 @st.cache_resource
 def muat_model(nama="tuning"):
-    """Model final. nama = 'tuning' atau 'awal'."""
+    """Model yang dilatih di data latih. nama = 'tuning' (dipakai aplikasi) atau 'awal' (pembanding)."""
     model = XGBRegressor()
     model.load_model(str(FOLDER_MODEL / f"model_{nama}.json"))
     return model
@@ -58,6 +52,6 @@ LABEL_PREDIKTOR = {
     "PPM": "Persentase penduduk miskin (%)",
     "TPAK": "Tingkat partisipasi angkatan kerja (%)",
     "TPT": "Tingkat pengangguran terbuka (%)",
-    "PDRB": "PDRB per kapita ADHK (ribu Rp)",
+    "PDRB": "PDRB per kapita ADHB (ribu Rp)",
     "KP": "Kepadatan penduduk (jiwa/km²)",
 }

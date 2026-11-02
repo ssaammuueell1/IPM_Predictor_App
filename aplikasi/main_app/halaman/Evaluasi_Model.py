@@ -3,49 +3,68 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS, URUTAN_STATUS
-from tampilan import hero, rapikan, penjelasan, WARNA_UTAMA
+from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR
+from tampilan import hero, rapikan, penjelasan, WARNA_UTAMA, WARNA_SEKUNDER
 
 info = muat_info()
 tabel = muat_tabel()
-silang = info["metrik_prediksi_silang"]["tuning"]
 uji = info["metrik_uji"]
-jumlah_daerah = info["jumlah"]["daerah"]
-r2 = silang["R2"]
-mae = angka(silang["MAE"], 2)
+jumlah = info["jumlah"]
+uji_tuning = uji["Dengan tuning"]
+fold = pd.DataFrame(info["tabel_fold"]["tuning"])
 
 hero("Evaluasi Model",
      "Seberapa akurat model memperkirakan IPM?",
      label="Kinerja model")
 
-# ---------- Angka utama ----------
-uji_tuning = uji["Dengan tuning"]
+# ---------- Angka utama: data uji ----------
 k1, k2, k3, k4 = st.columns(4)
 k1.metric("R² data uji", angka(uji_tuning["R2"], 2), border=True,
-          help="Diukur pada 20% kabupaten/kota yang tidak dipakai saat melatih model.")
-k2.metric("MAE data uji", f"±{angka(uji_tuning['MAE'], 2)} poin", border=True)
-k3.metric("R² validasi silang", angka(r2, 2), border=True,
-          help=f"Seluruh {jumlah_daerah} daerah diuji bergiliran dengan model yang tidak pernah melihatnya (5 fold).")
-k4.metric("MAE validasi silang", f"±{mae} poin", border=True,
-          help="Dipakai sebagai batas status di seluruh aplikasi.")
-st.caption(f"Data uji: 23 kabupaten/kota yang disisihkan sejak awal. Validasi silang: pengujian yang lebih ketat "
-           f"pada seluruh {jumlah_daerah} daerah.")
-
+          help=f"Diukur pada {jumlah['daerah_uji']} kabupaten/kota yang tidak dipakai saat melatih model.")
+k2.metric("MAE data uji", f"±{angka(uji_tuning['MAE'], 2)}", border=True,
+          help="Rata-rata kesalahan dalam poin IPM. Dipakai sebagai batas status di seluruh aplikasi.")
+k3.metric("RMSE data uji", angka(uji_tuning["RMSE"], 2), border=True,
+          help="Seperti MAE, tetapi kesalahan besar dihukum lebih berat.")
+k4.metric("MAE rata-rata k-fold", f"±{angka(fold['MAE'].mean(), 2)}", border=True,
+          help="Rata-rata MAE 5 fold validasi silang pada data latih.")
+st.caption(f"Data uji: {jumlah['daerah_uji']} kabupaten/kota ({jumlah['baris_uji']} baris) yang disisihkan sejak awal. "
+           f"Data latih: {jumlah['daerah_latih']} kabupaten/kota ({jumlah['baris_latih']} baris).")
 penjelasan(
     f"**R² data uji = {angka(uji_tuning['R2'], 2)}**: pada daerah yang tidak dipakai saat melatih, model dapat "
     f"menjelaskan sekitar **{angka(uji_tuning['R2'] * 100, 0)}%** perbedaan IPM antardaerah hanya dari lima indikator. "
-    f"Pada validasi silang yang menguji seluruh {jumlah_daerah} daerah, angkanya {angka(r2, 2)}, karena daerah yang "
-    f"sulit ditebak (misalnya di Papua) ikut diuji. Nilai 1 berarti sempurna, nilai 0 berarti tidak lebih baik "
-    f"dari menebak rata-rata.\n\n"
+    "Nilai 1 berarti sempurna, nilai 0 berarti tidak lebih baik dari menebak rata-rata.\n\n"
+    f"**MAE data uji = {angka(uji_tuning['MAE'], 2)}**: rata-rata tebakan model meleset sekitar "
+    f"{angka(uji_tuning['MAE'], 2)} poin IPM. Angka ini dipakai sebagai batas status (di atas / sesuai / di bawah prediksi)."
+)
+
+# ---------- Tabel per fold ----------
+st.subheader("Hasil validasi silang (5-Fold GroupKFold) pada data latih")
+tampil_fold = pd.DataFrame({
+    "Fold": [str(f) for f in fold["Fold"]] + ["Rata-rata", "Standar deviasi"],
+    "Daerah validasi": [str(int(v)) for v in fold["Daerah validasi"]] + ["", ""],
+    "Baris": [str(int(v)) for v in fold["Baris"]] + ["", ""],
+    "MAE": [angka(v, 3) for v in fold["MAE"]] + [angka(fold["MAE"].mean(), 3), angka(fold["MAE"].std(), 3)],
+    "RMSE": [angka(v, 3) for v in fold["RMSE"]] + [angka(fold["RMSE"].mean(), 3), angka(fold["RMSE"].std(), 3)],
+    "R²": [angka(v, 3) for v in fold["R2"]] + [angka(fold["R2"].mean(), 3), angka(fold["R2"].std(), 3)],
+})
+st.dataframe(tampil_fold, hide_index=True, width="stretch")
+penjelasan(
+    f"- Data latih ({jumlah['daerah_latih']} daerah) dibagi menjadi 5 kelompok per kabupaten/kota. Lima kali, empat "
+    "kelompok dipakai untuk belajar dan satu kelompok ditebak.\n"
+    "- **Standar deviasi kecil** berarti hasil model stabil, tidak bergantung pada daerah mana yang ditebak.\n"
+    "- R² per fold bisa lebih kecil dari R² data uji karena dihitung hanya dari sebaran IPM daerah di fold itu. "
+    "Untuk membandingkan fold, gunakan MAE.",
+    judul="Cara membaca tabel ini",
 )
 
 # ---------- Aktual vs prediksi | Kontribusi indikator ----------
 kiri, kanan = st.columns([3, 2], gap="large")
 with kiri:
     st.subheader("IPM aktual dan IPM prediksi")
-    fig = px.scatter(tabel, x="IPM", y="IPM_prediksi", color="Status", color_discrete_map=WARNA_STATUS,
-                     category_orders={"Status": URUTAN_STATUS},
-                     hover_data=["Kabupaten/Kota", "Provinsi", "Tahun"], opacity=0.7,
+    fig = px.scatter(tabel, x="IPM", y="IPM_prediksi", color="Jenis data",
+                     color_discrete_map={"Latih": WARNA_SEKUNDER, "Uji": WARNA_UTAMA},
+                     category_orders={"Jenis data": ["Latih", "Uji"]},
+                     hover_data=["Kabupaten/Kota", "Provinsi", "Tahun"], opacity=0.75,
                      labels={"IPM": "IPM aktual", "IPM_prediksi": "IPM prediksi"})
     garis = [tabel[["IPM", "IPM_prediksi"]].min().min(), tabel[["IPM", "IPM_prediksi"]].max().max()]
     fig.add_trace(go.Scatter(x=garis, y=garis, mode="lines", name="Prediksi tepat",
@@ -53,14 +72,10 @@ with kiri:
     st.plotly_chart(rapikan(fig, tinggi=440), width="stretch")
     penjelasan(
         "- Setiap **titik** adalah satu kabupaten/kota pada satu tahun.\n"
-        "- **Nomor/Sumbu Horizontal** = IPM aktual (data BPS), **Nomor/Sumbu Vertikal** = IPM prediksi model.\n"
-        "- Titik **tepat di garis putus-putus** berarti tebakan model sama persis dengan kenyataan.\n"
-        "- Titik **di bawah garis** (hijau-teal): IPM aktual lebih tinggi dari tebakan model, "
-        "jadi daerah itu **di atas prediksi**.\n"
-        "- Titik **di atas garis** (merah): IPM aktual lebih rendah dari tebakan model, "
-        "jadi daerah itu **di bawah prediksi**.\n"
-        "- Makin rapat titik-titik mengikuti garis, makin akurat model. Arahkan kursor ke titik untuk melihat "
-        "nama daerahnya."
+        "- **Sumbu horizontal** = IPM aktual (BPS), **sumbu vertikal** = IPM prediksi.\n"
+        "- **Teal** = data uji (ditebak model hasil tuning). **Abu-abu** = data latih (ditebak lewat validasi silang).\n"
+        "- Titik **tepat di garis putus-putus** berarti tebakan sama persis dengan kenyataan. Makin rapat titik "
+        "mengikuti garis, makin akurat model."
     )
 
 with kanan:
@@ -71,24 +86,7 @@ with kanan:
     st.plotly_chart(rapikan(fig2, tinggi=440, legenda=False), width="stretch")
     teratas = kontribusi.index[-1]
     penjelasan(
-        f"- Grafik ini menunjukkan **seberapa besar model bergantung** pada tiap indikator saat menebak IPM. "
-        f"Total semua batang = 100%.\n"
+        "- Seberapa besar model bergantung pada tiap indikator (total gain). Total semua batang = 100%.\n"
         f"- Batang terpanjang, **{teratas}** ({angka(kontribusi.iloc[-1], 0)}%), paling banyak dipakai model.\n"
-        f"- Grafik ini **tidak** menunjukkan arah (apakah indikator menaikkan atau menurunkan IPM) dan "
-        f"**bukan** bukti sebab-akibat. Artinya hanya: tanpa indikator ini, tebakan model akan paling terganggu."
+        "- Grafik ini **tidak** menunjukkan arah pengaruh dan **bukan** bukti sebab-akibat."
     )
-
-# ---------- Perbandingan model ----------
-st.subheader("Perbandingan model")
-tabel_uji = (pd.DataFrame(uji).T[["MAE", "R2"]]
-             .rename(columns={"MAE": "Rata-rata kesalahan (MAE)", "R2": "R²"},
-                     index={"Baseline": "Tebak rata-rata (baseline)"}))
-tabel_uji.index.name = "Model"
-st.dataframe(tabel_uji.reset_index().style.format(precision=2, decimal=","), hide_index=True, width="stretch")
-st.caption("Diukur pada data uji, yaitu 20% kabupaten/kota yang tidak dipakai saat melatih model.")
-penjelasan(
-    f"- **Mengapa R² validasi silang ({angka(r2)}) lebih kecil?** Tabel ini hanya memakai 23 daerah uji. "
-    f"Validasi silang menguji seluruh {jumlah_daerah} daerah, termasuk yang paling sulit ditebak, jadi lebih ketat. "
-    f"Batas status ±{mae} diambil dari validasi silang supaya status setiap daerah tidak terlalu longgar.",
-    judul="Cara membaca tabel ini",
-)

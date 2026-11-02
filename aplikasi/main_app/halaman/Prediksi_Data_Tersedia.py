@@ -36,12 +36,19 @@ def tampilkan_prediksi_data_tersedia():
     judul.subheader(f"{daerah}, {provinsi} · {tahun}")
     with status_kolom:
         badge_status(baris["Status"])
+        st.badge(f"Data {baris['Jenis data'].lower()}", icon=":material/dataset:", color="blue")
+    if baris["Jenis data"] == "Uji":
+        st.caption("Daerah ini termasuk **data uji**: tidak dipakai untuk melatih model. "
+                   "IPM prediksi berasal dari model hasil tuning.")
+    else:
+        st.caption("Daerah ini termasuk **data latih**. IPM prediksi berasal dari validasi silang (k-fold) "
+                   "pada data latih, yaitu ditebak oleh model yang tidak melihat daerah ini.")
 
     k1, k2, k3 = st.columns(3)
     k1.metric("IPM aktual", angka(baris["IPM"]), border=True)
     k2.metric("IPM prediksi", angka(baris["IPM_prediksi"]), border=True)
     k3.metric("Selisih", ("+" if baris["Selisih"] > 0 else "") + angka(baris["Selisih"]), border=True,
-            help=f"IPM aktual - IPM prediksi. Di luar ±{angka(ambang)} berarti di atas/di bawah prediksi.")
+            help=f"IPM aktual - IPM prediksi. Di luar ±{angka(ambang)} (MAE data uji) berarti di atas/di bawah prediksi.")
     with st.container(border=True):
         st.markdown(":material/summarize: **Artinya:** " + arti_hasil(baris["Selisih"], ambang))
 
