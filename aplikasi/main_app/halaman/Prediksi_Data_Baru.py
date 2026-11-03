@@ -1,8 +1,67 @@
 import pandas as pd
 import streamlit as st
+import plotly.graph_objects as go
 
 from utils import muat_info, muat_model, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS
 from tampilan import hero, kartu, badge_status, grafik_selisih, tentukan_status, penjelasan, arti_hasil
+
+def grafik_profil_indikator(nilai, rata_rata, kolom):
+    nama_indikator = []
+    perbedaan = []
+    teks_batang = []
+    detail = []
+
+    for k in kolom:
+        nilai_input = float(nilai[k])
+        nilai_rata = float(rata_rata[k])
+        if nilai_rata == 0:
+            selisih_persen = None
+            teks = "N/A"
+            detail_persen = "Tidak dapat dihitung (rata-rata 0)"
+        else:
+            selisih_persen = ((nilai_input - nilai_rata) / nilai_rata) * 100
+            teks = f"{selisih_persen:+.1f}%"
+            detail_persen = f"{selisih_persen:+.2f}%"
+
+        nama_indikator.append(LABEL_PREDIKTOR[k])
+        perbedaan.append(selisih_persen)
+        teks_batang.append(teks)
+        detail.append([nilai_input, nilai_rata, detail_persen])
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=perbedaan,
+        y=nama_indikator,
+        orientation="h",
+        marker_color="#0F766E",
+        text=teks_batang,
+        textposition="outside",
+        cliponaxis=False,
+        customdata=detail,
+        hovertemplate=(
+            "<b>%{y}</b><br>"
+            "Perbedaan relatif: %{customdata[2]}<br>"
+            "Nilai input: %{customdata[0]:,.2f}<br>"
+            "Rata-rata data latih: %{customdata[1]:,.2f}"
+            "<extra></extra>"
+        )
+    ))
+    fig.add_vline(x=0, line_dash="dash", line_color="#9CA3AF")
+
+    fig.update_layout(
+        height=350,
+        title="Profil Indikator terhadap Rata-rata Data Latih",
+        margin=dict(l=12, r=80, t=55, b=55),
+        xaxis_title="Perbedaan terhadap rata-rata data latih (%)",
+        yaxis_title="Indikator",
+        showlegend=False,
+        template="plotly_dark" if st.get_option("theme.base") == "dark" else "plotly_white",
+    )
+    fig.update_yaxes(autorange="reversed")
+    fig.update_xaxes(automargin=True, zeroline=False)
+    return fig
+
+
 def tampilkan_prediksi_data_baru():
     info = muat_info()
     model = muat_model("tuning")
@@ -17,7 +76,6 @@ def tampilkan_prediksi_data_baru():
     # Isi awal kotak masukan (kosong)
     for kunci in KUNCI.values():
         st.session_state.setdefault(kunci, None)
-
 
     def isi_contoh():
         """Isi dengan median data penelitian tahun terakhir, supaya mudah dicoba."""
@@ -119,6 +177,28 @@ def tampilkan_prediksi_data_baru():
                 "- **Area merah di kiri** = **di bawah prediksi** (IPM aktual lebih rendah dari perkiraan).\n"
                 "- **Tanda belah ketupat** menunjukkan posisi selisih daerah Anda. Makin jauh dari tengah, "
                 "makin besar perbedaannya."
+            )
+
+        rata_rata = info.get("rata_rata_prediktor")
+        if not isinstance(rata_rata, dict) or any(k not in rata_rata for k in kolom):
+            st.error(
+                "Grafik profil indikator belum dapat ditampilkan karena metadata rata-rata data latih "
+                "belum tersedia atau belum lengkap. Jalankan ulang bagian ekspor metadata pada notebook "
+                "`aplikasi/notebook/Model+tuning+fold.ipynb`; proses tuning tidak perlu dijalankan ulang."
+            )
+        else:
+            st.plotly_chart(
+                grafik_profil_indikator(nilai, rata_rata, kolom),
+                width="stretch",
+                config={"displayModeBar": False},
+            )
+            penjelasan(
+                "- Batang ke kanan menunjukkan nilai input di atas rata-rata data latih.\n"
+                "- Batang ke kiri menunjukkan nilai input di bawah rata-rata data latih.\n"
+                "- Persentase menunjukkan besarnya perbedaan relatif terhadap rata-rata.\n"
+                "- Grafik hanya membandingkan karakteristik indikator, bukan menunjukkan hubungan sebab-akibat "
+                "atau kontribusi indikator terhadap nilai prediksi IPM.",
+                judul="Cara membaca profil indikator",
             )
 
         # Model tidak bisa memperkirakan di luar rentang data penelitian
