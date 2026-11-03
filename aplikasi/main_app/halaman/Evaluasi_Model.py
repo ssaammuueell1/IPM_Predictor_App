@@ -60,20 +60,19 @@ penjelasan(
 # ---------- Aktual vs prediksi | Kontribusi indikator ----------
 kiri, kanan = st.columns([3, 2], gap="large")
 with kiri:
-    st.subheader("IPM aktual dan IPM prediksi")
-    fig = px.scatter(tabel, x="IPM", y="IPM_prediksi", color="Jenis data",
-                     color_discrete_map={"Latih": WARNA_SEKUNDER, "Uji": WARNA_UTAMA},
-                     category_orders={"Jenis data": ["Latih", "Uji"]},
-                     hover_data=["Kabupaten/Kota", "Provinsi", "Tahun"], opacity=0.75,
+    st.subheader("IPM aktual dan IPM prediksi (data uji)")
+    data_uji = tabel[tabel["Jenis data"] == "Uji"]
+    fig = px.scatter(data_uji, x="IPM", y="IPM_prediksi", color_discrete_sequence=[WARNA_UTAMA],
+                     hover_data=["Kabupaten/Kota", "Provinsi", "Tahun"], opacity=0.8,
                      labels={"IPM": "IPM aktual", "IPM_prediksi": "IPM prediksi"})
-    garis = [tabel[["IPM", "IPM_prediksi"]].min().min(), tabel[["IPM", "IPM_prediksi"]].max().max()]
+    garis = [data_uji[["IPM", "IPM_prediksi"]].min().min(), data_uji[["IPM", "IPM_prediksi"]].max().max()]
     fig.add_trace(go.Scatter(x=garis, y=garis, mode="lines", name="Prediksi tepat",
                              line=dict(color="gray", dash="dash")))
     st.plotly_chart(rapikan(fig, tinggi=440), width="stretch")
     penjelasan(
-        "- Setiap **titik** adalah satu kabupaten/kota pada satu tahun.\n"
+        f"- Setiap **titik** adalah satu kabupaten/kota data uji pada satu tahun ({len(data_uji)} titik).\n"
         "- **Sumbu horizontal** = IPM aktual (BPS), **sumbu vertikal** = IPM prediksi.\n"
-        "- **Teal** = data uji (ditebak model hasil tuning). **Abu-abu** = data latih (ditebak lewat validasi silang).\n"
+        "- Semua titik ditebak oleh model utama pada daerah yang tidak pernah dipakai untuk melatihnya.\n"
         "- Titik **tepat di garis putus-putus** berarti tebakan sama persis dengan kenyataan. Makin rapat titik "
         "mengikuti garis, makin akurat model."
     )

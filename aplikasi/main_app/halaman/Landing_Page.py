@@ -23,7 +23,7 @@ FITUR = [
     ("halaman/Evaluasi_Model.py", "Evaluasi Model", ":material/analytics:",
      "Kinerja model pada data uji dan tiap fold beserta metrik evaluasi (MAE, RMSE, R²)."),
     ("halaman/Daftar_wilayah.py", "Daftar Wilayah", ":material/table_view:",
-     "Seluruh daerah dalam cakupan beserta IPM prediksi, selisih, dan jenis data (latih/uji)."),
+     "Seluruh daerah dalam cakupan beserta jenis data (latih/uji); IPM prediksi dan selisih untuk data uji."),
 ]
 for i, (kolom, (halaman, nama, ikon, teks)) in enumerate(zip(st.columns(4), FITUR)):
     with kolom.container(border=True, height="stretch", key=f"kartu_fitur{i}"):
@@ -73,9 +73,9 @@ penjelasan(
     "| **IPM** | Ukuran kualitas hidup dari BPS (0–100): kesehatan, pendidikan, dan pengeluaran. |\n"
     "| **IPM aktual** | IPM resmi yang dicatat BPS. |\n"
     "| **IPM prediksi** | IPM yang diperkirakan model dari lima indikator. |\n"
-    "| **Data latih** | Daerah yang dipakai model untuk belajar. IPM prediksinya berasal dari validasi silang "
-    "(k-fold), yaitu ditebak oleh model yang tidak melihat daerah itu. |\n"
-    "| **Data uji** | Daerah yang disisihkan sejak awal dan tidak dipakai untuk belajar. |\n"
+    "| **Data latih** | Daerah yang dipakai model untuk belajar. Hanya IPM aktualnya yang ditampilkan. |\n"
+    "| **Data uji** | Daerah yang disisihkan sejak awal dan tidak dipakai untuk belajar. IPM prediksi, selisih, "
+    "dan status ditampilkan untuk daerah ini. |\n"
     "| **MAE** | Rata-rata kesalahan model dalam poin IPM. |\n"
     "| **R²** | Seberapa baik model menjelaskan perbedaan IPM antardaerah (0–1). |",
     judul="Istilah penting",
@@ -107,14 +107,15 @@ with st.container(border=True):
         "2. Yemima Monica Geasela, S.Kom., M.Kom."
     )
 
-pdf_path = Path(__file__).resolve().parents[3] / "Manual_Book.pdf"
-
-st.download_button(
-    label="Download Buku Panduan Aplikasi (PDF)",
-    data=pdf_path.read_bytes(),
-    file_name="Manual_Book.pdf",
-    mime="application/pdf",
-    type="primary",
-)
+# Buku panduan disimpan di folder main_app (ikut ter-deploy); tombol hanya muncul jika file ada
+pdf_path = Path(__file__).resolve().parents[1] / "Manual_Book.pdf"
+if pdf_path.exists():
+    st.download_button(
+        label="Download Buku Panduan Aplikasi (PDF)",
+        data=pdf_path.read_bytes(),
+        file_name="Manual_Book.pdf",
+        mime="application/pdf",
+        type="primary",
+    )
 st.caption("Aplikasi ini dibuat sebagai bagian dari skripsi: Prediksi IPM di Wilayah dengan Kemiskinan Tinggi "
            "di Indonesia Menggunakan XGBoost Regression.")

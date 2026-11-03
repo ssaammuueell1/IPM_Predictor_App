@@ -1,3 +1,4 @@
+import pandas as pd
 import streamlit as st
 
 from utils import muat_tabel, muat_info, angka
@@ -45,11 +46,14 @@ else:
     tampil = (hasil[["Kabupaten/Kota", "Provinsi", "Tahun", "Jenis data", "IPM", "IPM_prediksi", "Selisih"]]
               .rename(columns={"IPM": "IPM aktual", "IPM_prediksi": "IPM prediksi"})
               .sort_values(["Tahun", "Kabupaten/Kota"], ascending=[False, True]))
-    gaya = tampil.style.format({"IPM aktual": "{:.2f}", "IPM prediksi": "{:.2f}", "Selisih": "{:+.2f}"}, decimal=",")
+    # Data latih tidak punya IPM prediksi: ditulis "–" (Streamlit menampilkan sel kosong sebagai "None")
+    tampil["IPM prediksi"] = tampil["IPM prediksi"].map(lambda v: "–" if pd.isna(v) else angka(v))
+    tampil["Selisih"] = tampil["Selisih"].map(lambda v: "–" if pd.isna(v) else ("+" if v > 0 else "") + angka(v))
+    gaya = tampil.style.format({"IPM aktual": "{:.2f}"}, decimal=",")
     st.dataframe(gaya, hide_index=True, width="stretch", height=520,
                  column_config={"Tahun": st.column_config.NumberColumn(format="%d")})
-    st.caption("Data latih: IPM prediksi dari validasi silang (k-fold) pada data latih. "
-               "Data uji: IPM prediksi dari model hasil tuning, daerah ini tidak dipakai untuk melatih model.")
+    st.caption("IPM prediksi dan selisih hanya untuk **data uji** (daerah yang tidak dipakai melatih model). "
+               "Data latih dipakai model untuk belajar, sehingga hanya IPM aktualnya yang ditampilkan (–).")
 
     st.download_button(
         "Unduh tabel (CSV)", tampil.to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig"),

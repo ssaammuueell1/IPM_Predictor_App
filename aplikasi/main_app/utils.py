@@ -19,8 +19,17 @@ WARNA_STATUS = {STATUS_ATAS: "#0F766E", STATUS_SESUAI: "#214A9E", STATUS_BAWAH: 
 
 @st.cache_data
 def muat_tabel():
-    """Tabel IPM aktual, IPM prediksi, selisih, status, dan jenis data (latih/uji) untuk seluruh baris."""
-    return pd.read_csv(FOLDER_DATA / "tabel_prediksi.csv")
+    """Tabel 920 baris: IPM aktual, jenis data (latih/uji), 5 prediktor, dan IPM prediksi/selisih/status.
+
+    IPM prediksi, selisih, dan status HANYA untuk data uji (184 baris), yaitu tebakan model utama pada daerah
+    yang tidak pernah dipakai untuk melatihnya. Data latih (736 baris) dipakai model untuk belajar, sehingga
+    prediksinya dikosongkan dan hanya IPM aktualnya yang ditampilkan.
+    """
+    tabel = pd.read_csv(FOLDER_DATA / "tabel_prediksi.csv")
+    latih = tabel["Jenis data"] == "Latih"
+    tabel.loc[latih, ["IPM_prediksi", "Selisih"]] = float("nan")
+    tabel["Status"] = tabel["Status"].where(~latih, None)
+    return tabel
 
 
 @st.cache_data
