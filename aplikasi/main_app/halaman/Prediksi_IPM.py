@@ -7,8 +7,8 @@ hero("Prediksi IPM",
         "Lihat IPM prediksi dari data yang tersedia atau dari nilai indikator yang dimasukkan sendiri.",
         label="Per daerah")
 
-jenis = st.selectbox("Pilih jenis prediksi", ["Data tersedia", "Data baru"])
-if jenis == "Data tersedia":
-    tampilkan_prediksi_data_tersedia()
-else:
+jenis = st.selectbox("Pilih jenis prediksi", ["Data baru", "Data tersedia"])
+if jenis == "Data baru":
     tampilkan_prediksi_data_baru()
+else:
+    tampilkan_prediksi_data_tersedia()
