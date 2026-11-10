@@ -2,8 +2,9 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils import muat_tabel, muat_info, angka, WARNA_STATUS, LABEL_PREDIKTOR
-from tampilan import hero, badge_status, rapikan, penjelasan, arti_hasil, WARNA_UTAMA, WARNA_SEKUNDER
+from utils import muat_tabel, muat_info, angka, WARNA_STATUS, LABEL_PREDIKTOR, BATAS_KATEGORI, kategori_ipm
+from tampilan import (hero, badge_status, badge_kategori, kotak_kategori, rapikan, penjelasan, arti_hasil,
+                      WARNA_UTAMA, WARNA_SEKUNDER)
 
 def tampilkan_prediksi_data_tersedia():
     
@@ -38,6 +39,7 @@ def tampilkan_prediksi_data_tersedia():
     with status_kolom:
         if uji:
             badge_status(baris["Status"])
+        badge_kategori(baris["IPM"])
         st.badge(f"Data {baris['Jenis data'].lower()}", icon=":material/dataset:", color="blue")
     if uji:
         st.caption("Daerah ini termasuk **data uji**: tidak dipakai untuk melatih model. "
@@ -49,20 +51,23 @@ def tampilkan_prediksi_data_tersedia():
                 help=f"IPM aktual - IPM prediksi. Di luar ±{angka(ambang)} (MAE data uji) berarti di atas/di bawah prediksi.")
         with st.container(border=True):
             st.markdown(":material/summarize: **Artinya:** " + arti_hasil(baris["Selisih"], ambang))
+        kotak_kategori(baris["IPM"], baris["IPM_prediksi"])
     else:
         st.caption("Daerah ini termasuk **data latih**: dipakai model untuk belajar, sehingga IPM prediksinya "
                    "tidak ditampilkan (model sudah melihat daerah ini, jadi perbandingannya tidak adil). "
                    "Perbandingan IPM aktual dan prediksi hanya untuk daerah data uji.")
         k1, _ = st.columns([1, 2])
         k1.metric("IPM aktual", angka(baris["IPM"]), border=True)
+        kotak_kategori(baris["IPM"])
 
     kiri, kanan = st.columns([3, 2], gap="large")
 
-    # ---------- Grafik tren ----------
+    # ---------- Grafik tren: IPM aktual vs IPM prediksi per tahun ----------
     with kiri:
-        st.subheader("Tren IPM")
+        st.subheader("IPM aktual vs IPM prediksi per tahun" if uji else "Tren IPM aktual per tahun")
         tahun_x = data_daerah["Tahun"]
         prediksi = data_daerah["IPM_prediksi"]
+        kategori_aktual = data_daerah["IPM"].map(kategori_ipm)
 
         fig = go.Figure()
         if uji:
@@ -73,27 +78,47 @@ def tampilkan_prediksi_data_tersedia():
             fig.add_trace(go.Scatter(x=tahun_x, y=prediksi, mode="lines+markers", name="IPM prediksi",
                                     line=dict(color=WARNA_SEKUNDER, dash="dash"),
                                     hovertemplate="IPM prediksi %{y:.2f}<extra></extra>"))
+            info_hover = [f"{s} · selisih {'+' if d > 0 else ''}{angka(d)} · kategori {k}"
+                          for s, d, k in zip(data_daerah["Status"], data_daerah["Selisih"], kategori_aktual)]
+        else:
+            info_hover = [f"kategori {k} · data latih" for k in kategori_aktual]
         warna_titik = [WARNA_STATUS[s] for s in data_daerah["Status"]] if uji else WARNA_UTAMA
-        status_hover = data_daerah["Status"] if uji else ["data latih"] * len(data_daerah)
+        # Entri legenda terpisah supaya warnanya tetap teal (titik aslinya diwarnai sesuai status)
+        fig.add_trace(go.Scatter(x=[None], y=[None], mode="lines+markers", name="IPM aktual",
+                                line=dict(color=WARNA_UTAMA, width=3), marker=dict(size=9, color=WARNA_UTAMA)))
         fig.add_trace(go.Scatter(x=tahun_x, y=data_daerah["IPM"], mode="lines+markers", name="IPM aktual",
-                                line=dict(color=WARNA_UTAMA, width=3),
+                                showlegend=False, line=dict(color=WARNA_UTAMA, width=3),
                                 marker=dict(size=11, color=warna_titik,
                                             line=dict(color="white", width=2)),
-                                customdata=status_hover,
+                                customdata=info_hover,
                                 hovertemplate="IPM aktual %{y:.2f} · %{customdata}<extra></extra>"))
         fig.add_vline(x=tahun, line_dash="dot", line_color="gray")
+
+        # Garis batas kategori IPM BPS (60, 70, 80) yang masuk ke rentang grafik
+        nilai_y = pd.concat([data_daerah["IPM"], prediksi - ambang, prediksi + ambang]).dropna()
+        bawah, atas = nilai_y.min() - 1.5, nilai_y.max() + 1.5
+        for batas, nama in BATAS_KATEGORI.items():
+            if bawah < batas < atas:
+                fig.add_hline(y=batas, line=dict(color="#5B8F8A", width=1, dash="dot"),
+                              annotation_text=f"{batas} · mulai {nama}", annotation_position="top left",
+                              annotation_font=dict(size=11, color="#5B8F8A"))
         fig.update_layout(hovermode="x unified", yaxis_title="IPM")
         fig.update_xaxes(dtick=1)
+        fig.update_yaxes(range=[bawah, atas])
         st.plotly_chart(rapikan(fig, tinggi=380), width="stretch")
         if not uji:
             st.caption("Hanya IPM aktual yang ditampilkan karena daerah ini data latih.")
         penjelasan(
             "- **Garis teal tebal** = IPM aktual (data BPS) dari tahun ke tahun.\n"
-            "- **Garis abu-abu putus-putus** = IPM yang diperkirakan model (hanya untuk daerah data uji).\n"
+            "- **Garis abu-abu putus-putus** = IPM yang diperkirakan model pada tahun yang sama "
+            "(hanya untuk daerah data uji).\n"
             f"- **Area abu-abu** = batas toleransi ±{angka(ambang)} poin di sekitar prediksi. Selama titik IPM aktual "
             "berada di dalam area ini, daerah dianggap **sesuai prediksi**.\n"
             "- **Warna titik** (khusus data uji) menunjukkan status tiap tahun: teal = di atas prediksi, biru = sesuai, "
             "merah = di bawah prediksi.\n"
+            "- **Garis hijau keabuan titik-titik mendatar** = batas kategori IPM BPS: di bawah 60 Rendah, 60 sampai di bawah 70 "
+            "Sedang, 70 sampai di bawah 80 Tinggi, 80 ke atas Sangat tinggi. Hanya batas yang masuk ke rentang grafik "
+            "yang digambar.\n"
             "- **Garis titik-titik tegak** menandai tahun yang sedang dipilih.\n"
             "- Jika garis teal terus berada di atas area abu-abu, daerah ini konsisten naik (lebih baik) "
             "dari perkiraan; jika terus di bawah, daerah ini konsisten tertinggal."

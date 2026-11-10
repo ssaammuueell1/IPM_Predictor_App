@@ -57,6 +57,42 @@ penjelasan(
     judul="Cara membaca tabel ini",
 )
 
+# ---------- Rata-rata IPM aktual vs prediksi per tahun (data uji) ----------
+st.subheader("Rata-rata IPM aktual dan IPM prediksi per tahun (data uji)")
+data_uji = tabel[tabel["Jenis data"] == "Uji"]
+per_tahun = data_uji.groupby("Tahun").agg(aktual=("IPM", "mean"), prediksi=("IPM_prediksi", "mean")).reset_index()
+per_tahun["selisih"] = per_tahun["aktual"] - per_tahun["prediksi"]
+teks_selisih = [("+" if v > 0 else "") + angka(v) for v in per_tahun["selisih"]]
+
+fig_tahun = go.Figure()
+fig_tahun.add_trace(go.Scatter(x=per_tahun["Tahun"], y=per_tahun["prediksi"], mode="lines+markers",
+                               name="Rata-rata IPM prediksi", line=dict(color=WARNA_SEKUNDER, dash="dash", width=2),
+                               marker=dict(size=8), hovertemplate="Prediksi %{y:.2f}<extra></extra>"))
+fig_tahun.add_trace(go.Scatter(x=per_tahun["Tahun"], y=per_tahun["aktual"], mode="lines+markers",
+                               name="Rata-rata IPM aktual", line=dict(color=WARNA_UTAMA, width=3),
+                               marker=dict(size=9, line=dict(color="white", width=2)), customdata=teks_selisih,
+                               hovertemplate="Aktual %{y:.2f} · selisih %{customdata}<extra></extra>"))
+fig_tahun.update_layout(hovermode="x unified", yaxis_title="Rata-rata IPM", legend_traceorder="reversed")
+fig_tahun.update_xaxes(dtick=1)
+st.plotly_chart(rapikan(fig_tahun, tinggi=360), width="stretch")
+
+awal, akhir = per_tahun.iloc[0], per_tahun.iloc[-1]
+naik_aktual, naik_prediksi = akhir["aktual"] - awal["aktual"], akhir["prediksi"] - awal["prediksi"]
+tahun_positif = per_tahun.loc[per_tahun["selisih"] > 0, "Tahun"].tolist()
+penjelasan(
+    f"- Setiap titik adalah **rata-rata {jumlah['daerah_uji']} kabupaten/kota data uji** pada satu tahun.\n"
+    "- **Garis teal** = rata-rata IPM aktual (BPS), **garis abu-abu putus-putus** = rata-rata IPM prediksi model "
+    "untuk daerah dan tahun yang sama.\n"
+    "- Jika kedua garis berdekatan, secara rata-rata model mengikuti IPM sebenarnya. Jarak antargaris = rata-rata selisih "
+    "(arahkan kursor ke titik untuk melihat angkanya).\n"
+    f"- Dari {int(awal['Tahun'])} ke {int(akhir['Tahun'])}, rata-rata IPM aktual naik **{angka(naik_aktual)}** poin, "
+    f"sedangkan rata-rata IPM prediksi naik **{angka(naik_prediksi)}** poin.\n"
+    + (f"- Garis aktual berada di atas garis prediksi pada tahun {', '.join(str(t) for t in tahun_positif)}: "
+       "pada tahun-tahun itu IPM aktual cenderung lebih tinggi daripada perkiraan model.\n" if tahun_positif else "")
+    + "- Model hanya memakai lima indikator pada tahun yang sama, tanpa informasi tahun. Kenaikan IPM yang tidak "
+    "tercermin pada kelima indikator tersebut tidak ikut tertangkap oleh model."
+)
+
 # ---------- Aktual vs prediksi | Kontribusi indikator ----------
 kiri, kanan = st.columns([3, 2], gap="large")
 with kiri:

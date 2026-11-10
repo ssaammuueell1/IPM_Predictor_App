@@ -2,8 +2,9 @@ import pandas as pd
 import streamlit as st
 import plotly.graph_objects as go
 
-from utils import muat_info, muat_model, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS
-from tampilan import hero, kartu, badge_status, grafik_selisih, tentukan_status, penjelasan, arti_hasil
+from utils import muat_info, muat_model, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS, kategori_ipm
+from tampilan import (hero, kartu, badge_status, badge_kategori, kotak_kategori, grafik_selisih, tentukan_status,
+                      penjelasan, arti_hasil)
 
 def grafik_profil_indikator(nilai, rata_rata, kolom):
     nama_indikator = []
@@ -150,19 +151,24 @@ def tampilkan_prediksi_data_baru():
             kiri, _ = st.columns([1, 2])
             with kiri:
                 kartu("IPM prediksi", angka(ipm_prediksi), "Isi IPM aktual untuk melihat statusnya.")
+                badge_kategori(ipm_prediksi)
             st.markdown(
                 f":material/summarize: **Artinya:** daerah dengan kondisi seperti yang dimasukkan diperkirakan memiliki "
                 f"IPM sekitar **{angka(ipm_prediksi)}**, dengan kemungkinan meleset ±{angka(ambang)} poin "
-                f"(antara {angka(ipm_prediksi - ambang)} dan {angka(ipm_prediksi + ambang)})."
+                f"(antara {angka(ipm_prediksi - ambang)} dan {angka(ipm_prediksi + ambang)}). "
+                f"Menurut kategori BPS, nilai ini termasuk **{kategori_ipm(ipm_prediksi)}**."
             )
+            kotak_kategori(prediksi=ipm_prediksi)
         else:
             selisih = ipm_aktual - ipm_prediksi
             status = tentukan_status(selisih, ambang)
             k1, k2, k3 = st.columns(3)
             with k1:
                 kartu("IPM aktual", angka(ipm_aktual), "Nilai yang dimasukkan")
+                badge_kategori(ipm_aktual)
             with k2:
                 kartu("IPM prediksi", angka(ipm_prediksi), "Perkiraan model")
+                badge_kategori(ipm_prediksi)
             with k3:
                 kartu("Selisih", ("+" if selisih > 0 else "") + angka(selisih), status, WARNA_STATUS[status])
             badge_status(status)
@@ -178,6 +184,7 @@ def tampilkan_prediksi_data_baru():
                 "- **Tanda belah ketupat** menunjukkan posisi selisih daerah Anda. Makin jauh dari tengah, "
                 "makin besar perbedaannya."
             )
+            kotak_kategori(ipm_aktual, ipm_prediksi)
 
         rata_rata = info.get("rata_rata_prediktor")
         if not isinstance(rata_rata, dict) or any(k not in rata_rata for k in kolom):

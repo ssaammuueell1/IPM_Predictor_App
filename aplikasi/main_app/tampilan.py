@@ -2,7 +2,8 @@
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils import angka, WARNA_STATUS, STATUS_ATAS, STATUS_SESUAI, STATUS_BAWAH
+from utils import (angka, WARNA_STATUS, STATUS_ATAS, STATUS_SESUAI, STATUS_BAWAH, URUTAN_KATEGORI,
+                   TEKS_BATAS_KATEGORI, kategori_ipm)
 
 # Warna grafik dipilih supaya tetap terbaca di mode terang maupun gelap
 WARNA_UTAMA = "#0F766E"      # satu-satunya warna aksen
@@ -19,6 +20,11 @@ def transparan(warna_hex, alpha):
 
 # Warna latar lembut untuk setiap status (dipakai di tabel dan pita grafik)
 LATAR_STATUS = {s: transparan(w, 0.16) for s, w in WARNA_STATUS.items()}
+# Kategori IPM BPS: warna tema (teal) yang makin pekat dari Rendah ke Sangat tinggi
+WARNA_KATEGORI_DASAR = "#0F766E"
+WARNA_TEKS_KATEGORI = "#134E4A"
+LATAR_KATEGORI = {k: transparan(WARNA_KATEGORI_DASAR, a)
+                  for k, a in zip(URUTAN_KATEGORI, [0.05, 0.12, 0.21, 0.32])}
 BADGE_STATUS = {STATUS_ATAS: "green", STATUS_SESUAI: "gray", STATUS_BAWAH: "red"}
 IKON_STATUS = {STATUS_ATAS: ":material/trending_up:", STATUS_SESUAI: ":material/check_circle:",
                STATUS_BAWAH: ":material/trending_down:"}
@@ -35,6 +41,8 @@ GAYA = """
 [data-testid="stMetric"] {background: rgba(15,118,110,.06);}
 /* Kartu fitur & langkah di Beranda: garis teal di atas */
 [class*="st-key-kartu"] {border-top: 4px solid #0F766E !important;}
+/* Kotak kategori IPM BPS: garis teal di kiri dan latar teal tipis */
+.st-key-kotak_kategori {border-left: 6px solid #0F766E !important; background: rgba(15,118,110,.04);}
 </style>
 """
 
@@ -130,3 +138,56 @@ def grafik_selisih(selisih, ambang):
                      tickvals=[-ambang, 0, ambang], ticktext=[f"−{angka(ambang)}", "0", f"+{angka(ambang)}"])
     fig.update_yaxes(range=[0, 1.15], visible=False)
     return rapikan(fig, tinggi=150, legenda=False)
+
+
+def badge_kategori(nilai, awalan="Kategori BPS"):
+    """Badge oranye berisi kategori IPM BPS dari sebuah nilai IPM."""
+    st.badge(f"{awalan}: {kategori_ipm(nilai)}", icon=":material/military_tech:", color="primary")
+
+
+def grafik_kategori(aktual=None, prediksi=None):
+    """Pita empat kategori IPM BPS dengan penanda posisi IPM aktual dan/atau IPM prediksi."""
+    nilai = [v for v in (aktual, prediksi) if v is not None]
+    kiri = min(45.0, min(nilai) - 3)
+    kanan = max(90.0, max(nilai) + 3)
+    batas = [kiri, 60, 70, 80, kanan]
+    fig = go.Figure()
+    for i, k in enumerate(URUTAN_KATEGORI):
+        fig.add_shape(type="rect", x0=batas[i], x1=batas[i + 1], y0=0, y1=1, line_width=0,
+                      fillcolor=LATAR_KATEGORI[k], layer="below")
+        fig.add_annotation(x=(batas[i] + batas[i + 1]) / 2, y=0.13, showarrow=False,
+                           text=f"<b>{k}</b><br>{TEKS_BATAS_KATEGORI[k]}",
+                           font=dict(size=11, color=WARNA_TEKS_KATEGORI))
+    for x in (60, 70, 80):
+        fig.add_vline(x=x, line=dict(color=WARNA_KATEGORI_DASAR, width=1, dash="dot"))
+    penanda = []
+    if aktual is not None:
+        penanda.append(("IPM aktual", aktual, WARNA_TEKS_KATEGORI, "diamond", 0.66))
+    if prediksi is not None:
+        penanda.append(("IPM prediksi", prediksi, "#6B7280", "circle", 0.66 if aktual is None else 0.44))
+    for nama, v, warna, simbol, y in penanda:
+        fig.add_trace(go.Scatter(
+            x=[v], y=[y], mode="markers+text", name=nama, text=[f"{nama} {angka(v)}"],
+            textposition="middle right", textfont=dict(size=12, color=warna),
+            marker=dict(symbol=simbol, size=16, color=warna, line=dict(color="white", width=2)),
+            hovertemplate=f"{nama} %{{x:.2f}} · {kategori_ipm(v)}<extra></extra>"))
+    fig.update_xaxes(range=[kiri, kanan], showgrid=False, zeroline=False, tickvals=[60, 70, 80])
+    fig.update_yaxes(range=[0, 1], visible=False)
+    return rapikan(fig, tinggi=170, legenda=False)
+
+
+def kotak_kategori(aktual=None, prediksi=None):
+    """Kotak menonjol: kategori IPM BPS untuk IPM aktual dan/atau IPM prediksi, beserta pitanya."""
+    with st.container(border=True, key="kotak_kategori"):
+        st.markdown("##### :material/military_tech: Kategori IPM menurut BPS")
+        bagian = []
+        if aktual is not None:
+            bagian.append(f"IPM aktual **{angka(aktual)}** → **:primary[{kategori_ipm(aktual)}]**")
+        if prediksi is not None:
+            bagian.append(f"IPM prediksi **{angka(prediksi)}** → **:primary[{kategori_ipm(prediksi)}]**")
+        st.markdown(" &nbsp;·&nbsp; ".join(bagian))
+        st.plotly_chart(grafik_kategori(aktual, prediksi), width="stretch", config={"displayModeBar": False})
+        if aktual is not None and prediksi is not None and kategori_ipm(aktual) != kategori_ipm(prediksi):
+            st.caption("Kategori IPM aktual dan IPM prediksi berbeda: selisihnya melewati salah satu batas 60/70/80.")
+        st.caption("Kategori melihat **besarnya** IPM menurut pengelompokan BPS. Berbeda dengan **status**, "
+                   "yang membandingkan IPM aktual dengan IPM prediksi.")

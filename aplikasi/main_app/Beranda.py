@@ -16,7 +16,7 @@ navigasi = st.navigation([
 
 navigasi.run()
 
-# ---------- Keterangan di bagian bawah setiap halaman ----------
+#  Keterangan di bagian bawah setiap halaman 
 _info = muat_info()
 st.divider()
 st.caption(

@@ -56,6 +56,28 @@ def angka(x, desimal=2):
     return teks.replace(",", "#").replace(".", ",").replace("#", ".")
 
 
+# Kategori IPM menurut BPS: Rendah (< 60), Sedang (60 - < 70), Tinggi (70 - < 80), Sangat tinggi (>= 80)
+BATAS_KATEGORI = {60: "Sedang", 70: "Tinggi", 80: "Sangat tinggi"}   # nilai batas -> kategori mulai dari batas itu
+
+
+URUTAN_KATEGORI = ["Rendah", "Sedang", "Tinggi", "Sangat tinggi"]
+TEKS_BATAS_KATEGORI = {"Rendah": "IPM < 60", "Sedang": "60 ≤ IPM < 70", "Tinggi": "70 ≤ IPM < 80",
+                       "Sangat tinggi": "IPM ≥ 80"}
+
+
+def kategori_ipm(nilai):
+    """Kategori IPM BPS untuk satu nilai IPM. Nilai kosong -> None."""
+    if pd.isna(nilai):
+        return None
+    if nilai >= 80:
+        return "Sangat tinggi"
+    if nilai >= 70:
+        return "Tinggi"
+    if nilai >= 60:
+        return "Sedang"
+    return "Rendah"
+
+
 # Nama lengkap dan satuan setiap prediktor (dipakai halaman Prediksi Data Tersedia dan Data Baru)
 LABEL_PREDIKTOR = {
     "PPM": "Persentase penduduk miskin (%)",

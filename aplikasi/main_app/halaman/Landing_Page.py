@@ -1,8 +1,8 @@
 import streamlit as st
 from pathlib import Path
 
-from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR
-from tampilan import hero, penjelasan
+from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR, URUTAN_KATEGORI, TEKS_BATAS_KATEGORI
+from tampilan import hero, penjelasan, LATAR_KATEGORI, WARNA_KATEGORI_DASAR, WARNA_TEKS_KATEGORI
 
 info = muat_info()
 tabel = muat_tabel()
@@ -67,12 +67,27 @@ s1, s2, s3 = st.columns(3)
 s1.success(f"**Di atas prediksi**: selisih lebih dari +{ambang}. IPM lebih tinggi dari daerah lain dengan kondisi serupa.")
 s2.info(f"**Sesuai prediksi**: selisih antara −{ambang} dan +{ambang}. Masih dalam batas kesalahan model.")
 s3.error(f"**Di bawah prediksi**: selisih kurang dari −{ambang}. IPM lebih rendah dari daerah serupa, perlu perhatian lebih.")
+# ---------- Kategori IPM BPS ----------
+st.subheader("Kategori IPM menurut BPS")
+st.markdown("BPS mengelompokkan capaian IPM ke dalam empat kategori. Kategori ditampilkan untuk setiap IPM aktual "
+            "dan IPM prediksi di aplikasi ini.")
+for kolom, k in zip(st.columns(4), URUTAN_KATEGORI):
+    kolom.html(f"<div style='background:{LATAR_KATEGORI[k]};border-radius:10px;padding:14px 16px;"
+               f"border-left:5px solid {WARNA_KATEGORI_DASAR}'>"
+               f"<div style='font-weight:700;font-size:1.1rem;color:{WARNA_TEKS_KATEGORI}'>{k}</div>"
+               f"<div style='color:{WARNA_TEKS_KATEGORI}'>{TEKS_BATAS_KATEGORI[k]}</div></div>")
+st.caption("Sumber: Badan Pusat Statistik (metadata indikator IPM). Kategori melihat besarnya IPM, "
+           "sedangkan status membandingkan IPM aktual dengan IPM prediksi.")
+
 penjelasan(
     "| Istilah | Arti sederhana |\n"
     "|---|---|\n"
     "| **IPM** | Ukuran kualitas hidup dari BPS (0–100): kesehatan, pendidikan, dan pengeluaran. |\n"
     "| **IPM aktual** | IPM resmi yang dicatat BPS. |\n"
     "| **IPM prediksi** | IPM yang diperkirakan model dari lima indikator. |\n"
+    "| **Kategori IPM (BPS)** | Pengelompokan IPM oleh BPS: Rendah (< 60), Sedang (60 – < 70), Tinggi (70 – < 80), "
+    "Sangat tinggi (≥ 80). Berbeda dengan status: kategori melihat besarnya IPM, status membandingkan IPM aktual "
+    "dengan IPM prediksi. |\n"
     "| **Data latih** | Daerah yang dipakai model untuk belajar. Hanya IPM aktualnya yang ditampilkan. |\n"
     "| **Data uji** | Daerah yang disisihkan sejak awal dan tidak dipakai untuk belajar. IPM prediksi, selisih, "
     "dan status ditampilkan untuk daerah ini. |\n"
