@@ -77,14 +77,15 @@ def arti_hasil(selisih, ambang, subjek="daerah ini"):
     """Kalimat sederhana yang menjelaskan arti selisih dan status untuk pembaca awam."""
     status = tentukan_status(selisih, ambang)
     if status == STATUS_ATAS:
-        return (f"IPM aktual **{angka(selisih)} poin lebih tinggi** daripada perkiraan model. Artinya, capaian "
-                f"pembangunan manusia {subjek} **lebih baik** daripada daerah lain yang kondisi sosial-ekonominya mirip.")
+        return (f"IPM aktual {subjek} **{angka(selisih)} poin lebih tinggi** daripada IPM prediksi dari kelima "
+                f"indikatornya. Capaian IPM-nya **melampaui** perkiraan model.")
     if status == STATUS_BAWAH:
-        return (f"IPM aktual **{angka(-selisih)} poin lebih rendah** daripada perkiraan model. Artinya, capaian "
-                f"pembangunan manusia {subjek} **tertinggal** dari daerah lain yang kondisi sosial-ekonominya mirip, "
-                f"sehingga perlu perhatian lebih.")
-    return (f"IPM aktual dan IPM prediksi hanya berbeda **{angka(abs(selisih))} poin**, masih di dalam batas "
-            f"±{angka(ambang)}. Artinya, capaian {subjek} **setara** dengan daerah lain yang kondisinya mirip.")
+        return (f"IPM aktual {subjek} **{angka(-selisih)} poin lebih rendah** daripada IPM prediksi dari kelima "
+                f"indikatornya. Capaian IPM-nya **belum mencapai** perkiraan model, sehingga perlu ditelusuri "
+                f"faktor lain di luar kelima indikator.")
+    return (f"IPM aktual {subjek} dan IPM prediksi dari kelima indikatornya hanya berbeda "
+            f"**{angka(abs(selisih))} poin**, masih di dalam batas ±{angka(ambang)}. Capaian IPM-nya **sejalan** "
+            f"dengan perkiraan model.")
 
 
 def kartu_status(status, jumlah, total):

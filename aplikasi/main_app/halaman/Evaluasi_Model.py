@@ -137,8 +137,8 @@ with kiri:
     penjelasan(
         f"- Setiap **batang** adalah satu kabupaten/kota data uji ({len(per_daerah)} daerah). Panjangnya = rata-rata "
         "selisih (IPM aktual − IPM prediksi) selama 2017–2024.\n"
-        "- **Batang ke kanan**: IPM aktual rata-rata **lebih tinggi** daripada perkiraan model, jadi daerah ini lebih baik "
-        "daripada daerah lain yang kondisi sosial-ekonominya mirip. **Batang ke kiri**: rata-rata **lebih rendah**.\n"
+        "- **Batang ke kanan**: IPM aktual daerah itu rata-rata **lebih tinggi** daripada IPM prediksi dari kelima "
+        "indikatornya. **Batang ke kiri**: rata-rata **lebih rendah** daripada IPM prediksinya.\n"
         f"- **Pita abu-abu** (−{angka(ambang)} sampai +{angka(ambang)}) = batas kesalahan wajar model (MAE data uji). "
         "Batang yang berakhir di dalam pita berarti daerah itu **sesuai prediksi**.\n"
         "- **Warna** mengikuti status rata-ratanya: teal = di atas, biru = sesuai, merah = di bawah prediksi.\n"

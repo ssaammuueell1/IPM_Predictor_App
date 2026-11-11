@@ -50,7 +50,7 @@ def tampilkan_prediksi_data_tersedia():
         k3.metric("Selisih", ("+" if baris["Selisih"] > 0 else "") + angka(baris["Selisih"]), border=True,
                 help=f"IPM aktual - IPM prediksi. Di luar ±{angka(ambang)} (MAE data uji) berarti di atas/di bawah prediksi.")
         with st.container(border=True):
-            st.markdown(":material/summarize: **Artinya:** " + arti_hasil(baris["Selisih"], ambang))
+            st.markdown(":material/summarize: **Artinya:** " + arti_hasil(baris["Selisih"], ambang, subjek=daerah))
         kotak_kategori(baris["IPM"], baris["IPM_prediksi"])
     else:
         st.caption("Daerah ini termasuk **data latih**: dipakai model untuk belajar, sehingga IPM prediksinya "
@@ -126,26 +126,32 @@ def tampilkan_prediksi_data_tersedia():
 
     # ---------- Posisi indikator ----------
     with kanan:
-        st.subheader(f"Indikator vs rata-rata ({tahun})")
+        st.subheader(f"Indikator {daerah} dibandingkan rata-rata ({tahun})")
+        st.caption(f"Pembanding: rata-rata {jumlah_daerah} kabupaten/kota kemiskinan tinggi pada tahun {tahun}.")
         kolom = list(LABEL_PREDIKTOR)
-        beda = pd.Series([(baris[k] / data_tahun[k].mean() - 1) * 100 for k in kolom], index=LABEL_PREDIKTOR.values())
+        rata_tahun = [data_tahun[k].mean() for k in kolom]
+        beda = pd.Series([(baris[k] / r - 1) * 100 for k, r in zip(kolom, rata_tahun)], index=LABEL_PREDIKTOR.values())
         fig2 = go.Figure(go.Bar(
             x=beda.values, y=beda.index, orientation="h",
             marker_color=[WARNA_UTAMA if v >= 0 else WARNA_SEKUNDER for v in beda.values],
             text=[("+" if v > 0 else "") + angka(v, 0) + "%" for v in beda.values],
-            textposition="outside", cliponaxis=False, hovertemplate="%{y}: %{x:.1f}%<extra></extra>",
+            textposition="outside", cliponaxis=False,
+            customdata=[[angka(baris[k]), angka(r)] for k, r in zip(kolom, rata_tahun)],
+            hovertemplate=(f"<b>%{{y}}</b><br>{daerah}: %{{customdata[0]}}<br>"
+                           f"Rata-rata {jumlah_daerah} kab/kota: %{{customdata[1]}}<br>Beda: %{{x:.1f}}%<extra></extra>"),
         ))
         fig2.add_vline(x=0, line_color="#9CA3AF")
         # Ruang tambahan di kiri-kanan supaya label angka di ujung batang tidak terpotong
         ruang = max(abs(beda.min()), abs(beda.max()), 10) * 0.45
-        fig2.update_xaxes(title=f"Beda dari rata-rata {jumlah_daerah} daerah (%)", ticksuffix="%",
+        fig2.update_xaxes(title=f"Beda dari rata-rata {jumlah_daerah} kab/kota tahun {tahun} (%)", ticksuffix="%",
                         range=[min(beda.min(), 0) - ruang, max(beda.max(), 0) + ruang])
         fig2.update_yaxes(autorange="reversed", title=None)
         st.plotly_chart(rapikan(fig2, tinggi=380, legenda=False), width="stretch")
         tertinggi, terendah = beda.idxmax(), beda.idxmin()
         penjelasan(
-            f"- Setiap batang membandingkan indikator {daerah} dengan **rata-rata {jumlah_daerah} daerah** "
-            f"pada tahun {tahun}.\n"
+            f"- Setiap batang membandingkan nilai indikator {daerah} dengan **rata-rata indikator yang sama dari "
+            f"{jumlah_daerah} kabupaten/kota kemiskinan tinggi** pada tahun {tahun}.\n"
+            "- Arahkan kursor ke batang untuk melihat nilai daerah ini dan nilai rata-ratanya.\n"
             "- **0%** = sama dengan rata-rata. **+20%** = 20% lebih tinggi dari rata-rata, **-20%** = 20% lebih rendah.\n"
             "- Teal = di atas rata-rata, abu-abu = di bawah rata-rata.\n"
             "- Hati-hati: **lebih tinggi tidak selalu lebih baik**. Untuk penduduk miskin dan pengangguran, "

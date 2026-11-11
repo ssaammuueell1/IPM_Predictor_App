@@ -20,6 +20,6 @@ navigasi.run()
 _info = muat_info()
 st.divider()
 st.caption(
-    f"Model: XGBoost Regression dengan tuning · "
+    f"Model: XGBoost Regression dengan tuning. "
     f"Data: {_info['jumlah']['daerah']} kab/kota, {_info['jumlah']['tahun_awal']}–{_info['jumlah']['tahun_akhir']}"
 )

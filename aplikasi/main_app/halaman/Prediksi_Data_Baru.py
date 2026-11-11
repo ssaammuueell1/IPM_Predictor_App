@@ -10,6 +10,11 @@ from tampilan import (hero, kartu, badge_status, badge_kategori, kotak_kategori,
                       penjelasan, arti_hasil, rapikan, LATAR_KATEGORI, WARNA_TEKS_KATEGORI, WARNA_KATEGORI_DASAR,
                       transparan)
 
+# Pembanding grafik profil = rata-rata 736 baris data latih (info_model.json: rata_rata_prediktor)
+_j = muat_info()["jumlah"]
+ACUAN_LATIH = f"{_j['daerah_latih']} kab/kota data latih {_j['tahun_awal']}–{_j['tahun_akhir']}"
+
+
 def grafik_profil_indikator(nilai, rata_rata, kolom):
     nama_indikator = []
     perbedaan = []
@@ -47,7 +52,7 @@ def grafik_profil_indikator(nilai, rata_rata, kolom):
             "<b>%{y}</b><br>"
             "Perbedaan relatif: %{customdata[2]}<br>"
             "Nilai input: %{customdata[0]:,.2f}<br>"
-            "Rata-rata data latih: %{customdata[1]:,.2f}"
+            f"Rata-rata {ACUAN_LATIH}: %{{customdata[1]:,.2f}}"
             "<extra></extra>"
         )
     ))
@@ -55,9 +60,9 @@ def grafik_profil_indikator(nilai, rata_rata, kolom):
 
     fig.update_layout(
         height=350,
-        title="Profil Indikator terhadap Rata-rata Data Latih",
+        title=f"Indikator yang dimasukkan dibandingkan rata-rata {ACUAN_LATIH}",
         margin=dict(l=12, r=80, t=55, b=55),
-        xaxis_title="Perbedaan terhadap rata-rata data latih (%)",
+        xaxis_title="Beda dari rata-rata data latih (%)",
         yaxis_title="Indikator",
         showlegend=False,
         template="plotly_dark" if st.get_option("theme.base") == "dark" else "plotly_white",
@@ -219,6 +224,7 @@ def tampilkan_satu_daerah(model, info, tabel):
                 config={"displayModeBar": False},
             )
             penjelasan(
+                f"- Pembanding: **rata-rata {ACUAN_LATIH}**, yaitu daerah yang dipakai model untuk belajar.\n"
                 "- Batang ke kanan menunjukkan nilai input di atas rata-rata data latih.\n"
                 "- Batang ke kiri menunjukkan nilai input di bawah rata-rata data latih.\n"
                 "- Persentase menunjukkan besarnya perbedaan relatif terhadap rata-rata.\n"
@@ -507,8 +513,9 @@ def tampilkan_unggah_file(model, info, tabel):
                 st.caption("Tidak ada baris di bawah prediksi.")
             else:
                 st.dataframe(tabel_top(bawah), hide_index=True, width="stretch")
-        st.caption("Daerah dengan selisih besar adalah daerah yang IPM-nya paling berbeda dari daerah lain dengan "
-                   "kondisi sosial-ekonomi mirip, sehingga layak dikaji lebih lanjut. Ini bukan penjelasan sebab-akibat.")
+        st.caption("Daerah dengan selisih besar adalah daerah yang IPM aktualnya paling jauh dari IPM prediksi "
+                   "berdasarkan kelima indikatornya, sehingga layak dikaji lebih lanjut. Ini bukan penjelasan "
+                   "sebab-akibat.")
 
     st.markdown("##### Tabel lengkap")
 
