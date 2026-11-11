@@ -78,6 +78,17 @@ def kategori_ipm(nilai):
     return "Rendah"
 
 
+def jarak_kategori(nilai):
+    """Poin IPM yang masih dibutuhkan untuk naik ke kategori BPS berikutnya: (jarak, nama kategori).
+    None jika nilai kosong atau sudah Sangat tinggi."""
+    if pd.isna(nilai):
+        return None
+    for batas, nama in BATAS_KATEGORI.items():          # 60 -> Sedang, 70 -> Tinggi, 80 -> Sangat tinggi
+        if nilai < batas:
+            return batas - nilai, nama
+    return None
+
+
 # Nama lengkap dan satuan setiap prediktor (dipakai halaman Prediksi Data Tersedia dan Data Baru)
 LABEL_PREDIKTOR = {
     "PPM": "Persentase penduduk miskin (%)",

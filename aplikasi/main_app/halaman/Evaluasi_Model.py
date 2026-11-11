@@ -3,8 +3,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
-from utils import muat_info, muat_tabel, angka, LABEL_PREDIKTOR
-from tampilan import hero, rapikan, penjelasan, WARNA_UTAMA, WARNA_SEKUNDER
+from utils import (muat_info, muat_tabel, angka, LABEL_PREDIKTOR, WARNA_STATUS, STATUS_ATAS, STATUS_SESUAI,
+                   STATUS_BAWAH)
+from tampilan import hero, rapikan, penjelasan, tentukan_status, WARNA_UTAMA, WARNA_SEKUNDER
 
 info = muat_info()
 tabel = muat_tabel()
@@ -93,24 +94,59 @@ penjelasan(
     "tercermin pada kelima indikator tersebut tidak ikut tertangkap oleh model."
 )
 
-# ---------- Aktual vs prediksi | Kontribusi indikator ----------
+# ---------- Rata-rata selisih per daerah uji (kiri) | Kontribusi indikator (kanan) ----------
 kiri, kanan = st.columns([3, 2], gap="large")
 with kiri:
-    st.subheader("IPM aktual dan IPM prediksi (data uji)")
-    data_uji = tabel[tabel["Jenis data"] == "Uji"]
-    fig = px.scatter(data_uji, x="IPM", y="IPM_prediksi", color_discrete_sequence=[WARNA_UTAMA],
-                     hover_data=["Kabupaten/Kota", "Provinsi", "Tahun"], opacity=0.8,
-                     labels={"IPM": "IPM aktual", "IPM_prediksi": "IPM prediksi"})
-    garis = [data_uji[["IPM", "IPM_prediksi"]].min().min(), data_uji[["IPM", "IPM_prediksi"]].max().max()]
-    fig.add_trace(go.Scatter(x=garis, y=garis, mode="lines", name="Prediksi tepat",
-                             line=dict(color="gray", dash="dash")))
-    st.plotly_chart(rapikan(fig, tinggi=440), width="stretch")
+    st.subheader("Rata-rata selisih per daerah uji")
+    ambang = info["ambang_status"]
+    per_daerah = (data_uji.groupby(["Kabupaten/Kota", "Provinsi"])
+                  .agg(rata=("Selisih", "mean"), mae=("Selisih", lambda s: s.abs().mean()),
+                       atas=("Status", lambda s: (s == STATUS_ATAS).sum()),
+                       sesuai=("Status", lambda s: (s == STATUS_SESUAI).sum()),
+                       bawah=("Status", lambda s: (s == STATUS_BAWAH).sum()))
+                  .reset_index().sort_values("rata"))
+    per_daerah["status"] = [tentukan_status(v, ambang) for v in per_daerah["rata"]]
+
+    fig = go.Figure()
+    fig.add_shape(type="rect", x0=-ambang, x1=ambang, y0=-0.5, y1=len(per_daerah) - 0.5, line_width=0,
+                  fillcolor="rgba(156,163,175,0.18)", layer="below")
+    for x in (-ambang, ambang):
+        fig.add_vline(x=x, line=dict(color=WARNA_SEKUNDER, width=1, dash="dot"))
+    fig.add_vline(x=0, line=dict(color="#6B7280", width=1))
+    fig.add_trace(go.Bar(
+        y=per_daerah["Kabupaten/Kota"], x=per_daerah["rata"], orientation="h",
+        marker_color=[WARNA_STATUS[s] for s in per_daerah["status"]],
+        text=[("+" if v > 0 else "") + angka(v) for v in per_daerah["rata"]], textposition="outside",
+        customdata=per_daerah[["Provinsi", "mae", "atas", "sesuai", "bawah"]],
+        hovertemplate="<b>%{y}</b>, %{customdata[0]}<br>Rata-rata selisih %{x:.2f} · MAE %{customdata[1]:.2f}"
+                      "<br>Di atas %{customdata[2]} · sesuai %{customdata[3]} · di bawah %{customdata[4]} "
+                      "(dari 8 tahun)<extra></extra>"))
+    fig.add_annotation(x=0, y=len(per_daerah) - 0.3, text=f"Sesuai prediksi (±{angka(ambang)})", showarrow=False,
+                       yanchor="bottom", font=dict(size=11, color="#6B7280"))
+    batas_x = per_daerah["rata"].abs().max() + 2
+    fig.update_xaxes(title="Rata-rata selisih 2017–2024 (aktual − prediksi)", range=[-batas_x, batas_x], zeroline=False)
+    fig.update_yaxes(title=None, automargin=True)
+    fig = rapikan(fig, tinggi=520, legenda=False)
+    fig.update_layout(bargap=0.3, uniformtext=dict(minsize=9, mode="show"))
+    fig.update_traces(textfont_size=10, cliponaxis=False, selector=dict(type="bar"))
+    st.plotly_chart(fig, width="stretch")
+
+    dalam = int((per_daerah["status"] == STATUS_SESUAI).sum())
+    konsisten_atas = per_daerah.loc[per_daerah["atas"] == 8, "Kabupaten/Kota"].tolist()
+    konsisten_bawah = per_daerah.loc[per_daerah["bawah"] == 8, "Kabupaten/Kota"].tolist()
     penjelasan(
-        f"- Setiap **titik** adalah satu kabupaten/kota data uji pada satu tahun ({len(data_uji)} titik).\n"
-        "- **Sumbu horizontal** = IPM aktual (BPS), **sumbu vertikal** = IPM prediksi.\n"
-        "- Semua titik ditebak oleh model utama pada daerah yang tidak pernah dipakai untuk melatihnya.\n"
-        "- Titik **tepat di garis putus-putus** berarti tebakan sama persis dengan kenyataan. Makin rapat titik "
-        "mengikuti garis, makin akurat model."
+        f"- Setiap **batang** adalah satu kabupaten/kota data uji ({len(per_daerah)} daerah). Panjangnya = rata-rata "
+        "selisih (IPM aktual − IPM prediksi) selama 2017–2024.\n"
+        "- **Batang ke kanan**: IPM aktual rata-rata **lebih tinggi** daripada perkiraan model, jadi daerah ini lebih baik "
+        "daripada daerah lain yang kondisi sosial-ekonominya mirip. **Batang ke kiri**: rata-rata **lebih rendah**.\n"
+        f"- **Pita abu-abu** (−{angka(ambang)} sampai +{angka(ambang)}) = batas kesalahan wajar model (MAE data uji). "
+        "Batang yang berakhir di dalam pita berarti daerah itu **sesuai prediksi**.\n"
+        "- **Warna** mengikuti status rata-ratanya: teal = di atas, biru = sesuai, merah = di bawah prediksi.\n"
+        f"- **{dalam} dari {len(per_daerah)} daerah** berada di dalam pita.\n"
+        + (f"- Selalu di atas prediksi pada 8 tahun: **{', '.join(konsisten_atas)}**.\n" if konsisten_atas else "")
+        + (f"- Selalu di bawah prediksi pada 8 tahun: **{', '.join(konsisten_bawah)}**.\n" if konsisten_bawah else "")
+        + "- Rata-rata 8 tahun bisa menyembunyikan naik-turun antartahun. Arahkan kursor ke batang untuk melihat MAE "
+        "dan jumlah tahun di atas/sesuai/di bawah prediksi, atau buka daerahnya di halaman **Prediksi IPM → Data tersedia**."
     )
 
 with kanan:
@@ -118,7 +154,7 @@ with kanan:
     kontribusi = pd.Series(info["kontribusi_fitur"]).rename(index=LABEL_PREDIKTOR).sort_values()
     fig2 = px.bar(x=kontribusi.values, y=kontribusi.index, orientation="h", text_auto=".0f",
                   labels={"x": "Kontribusi (%)", "y": ""}, color_discrete_sequence=[WARNA_UTAMA])
-    st.plotly_chart(rapikan(fig2, tinggi=440, legenda=False), width="stretch")
+    st.plotly_chart(rapikan(fig2, tinggi=520, legenda=False), width="stretch")
     teratas = kontribusi.index[-1]
     penjelasan(
         "- Seberapa besar model bergantung pada tiap indikator (total gain). Total semua batang = 100%.\n"
